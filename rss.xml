@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+    <channel>
+        <title>Rikka 3nyb</title>
+        <link>http://3nyb.com</link>
+        <description>我还没有写简介</description>
+        <language>en</language>
+        <pubDate>Sun, 29 Sep 2024 22:24:00 -0500</pubDate>
+        <lastBuildDate>Sun, 29 Sep 2024 22:24:00 -0500</lastBuildDate>
+        <category>test</category>
+        <item>
+            <guid isPermalink="true">http://3nyb.com/2024/09/29/Test-Post/</guid>
+            <title>Test Post</title>
+            <link>http://3nyb.com/2024/09/29/Test-Post/</link>
+            <category>test</category>
+            <pubDate>Sun, 29 Sep 2024 22:24:00 -0500</pubDate>
+            <description><![CDATA[ &lt;h1 id=&#34;这是标题一&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#这是标题一&#34;&gt;#&lt;/a&gt; 这是标题一&lt;/h1&gt;
+&lt;h2 id=&#34;这是标题二&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#这是标题二&#34;&gt;#&lt;/a&gt; 这是标题二&lt;/h2&gt;
+&lt;h3 id=&#34;然后这是标题三&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#然后这是标题三&#34;&gt;#&lt;/a&gt; 然后这是标题三&lt;/h3&gt;
+&lt;h4 id=&#34;标题四最多有多少啊喂&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#标题四最多有多少啊喂&#34;&gt;#&lt;/a&gt; 标题四，最多有多少啊喂！&lt;/h4&gt;
+&lt;h5 id=&#34;所以说这就是markdown语言么-标题唔btw~&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#所以说这就是markdown语言么-标题唔btw~&#34;&gt;#&lt;/a&gt; 所以说这就是 markdown 语言么。标题唔 btw~&lt;/h5&gt;
+&lt;p&gt;&lt;strong&gt;加粗加粗！所以说要怎么学习 markdown？&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;s&gt;hmmm，我被划了&lt;/s&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;这啥意思&lt;/li&gt;
+&lt;li&gt;哦是 bullet point&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;还能有序的哈哈哈&lt;/li&gt;
+&lt;li&gt;哦耶&lt;/li&gt;
+&lt;li&gt;曼波&lt;/li&gt;
+&lt;li&gt;哈机米&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;code&gt;println!(&amp;quot;Hello world!&amp;quot;);&lt;/code&gt;&lt;/p&gt;
+&lt;figure class=&#34;highlight json&#34;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&#34;gutter&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&#34;line&#34;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&#34;line&#34;&gt;3&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&#34;code&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;string&#34;&gt;&amp;quot;hi&amp;quot;&lt;/span&gt;&lt;span class=&#34;punctuation&#34;&gt;&amp;#123;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&#34;line&#34;&gt;  &lt;span class=&#34;string&#34;&gt;&amp;quot;mygod&amp;quot;&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;punctuation&#34;&gt;&amp;#125;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;blockquote&gt;
+&lt;p&gt;我不会写 json 文档 QAQ，准确说是我忘了 笑死，引用？&lt;/p&gt;
+&lt;/blockquote&gt;
+ ]]></description>
+        </item>
+        <item>
+            <guid isPermalink="true">http://3nyb.com/2024/09/29/hello-world/</guid>
+            <title>Hello World</title>
+            <link>http://3nyb.com/2024/09/29/hello-world/</link>
+            <pubDate>Sun, 29 Sep 2024 16:30:06 -0500</pubDate>
+            <description><![CDATA[ &lt;p&gt;This is Zhongbo, I am testing for deployment. Welcome to &lt;a href=&#34;https://hexo.io/&#34;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&#34;https://hexo.io/docs/&#34;&gt;documentation&lt;/a&gt; for more info. If you get any problems when using Hexo, you can find the answer in &lt;a href=&#34;https://hexo.io/docs/troubleshooting.html&#34;&gt;troubleshooting&lt;/a&gt; or you can ask me on &lt;a href=&#34;https://github.com/hexojs/hexo/issues&#34;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;quick-start&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#quick-start&#34;&gt;#&lt;/a&gt; Quick Start&lt;/h2&gt;
+&lt;h3 id=&#34;create-a-new-post&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#create-a-new-post&#34;&gt;#&lt;/a&gt; Create a new post&lt;/h3&gt;
+&lt;figure class=&#34;highlight bash&#34;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&#34;gutter&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&#34;code&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;$ hexo new &lt;span class=&#34;string&#34;&gt;&amp;quot;My New Post&amp;quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;More info: &lt;a href=&#34;https://hexo.io/docs/writing.html&#34;&gt;Writing&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;run-server&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#run-server&#34;&gt;#&lt;/a&gt; Run server&lt;/h3&gt;
+&lt;figure class=&#34;highlight bash&#34;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&#34;gutter&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&#34;code&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;$ hexo server&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;More info: &lt;a href=&#34;https://hexo.io/docs/server.html&#34;&gt;Server&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;generate-static-files&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#generate-static-files&#34;&gt;#&lt;/a&gt; Generate static files&lt;/h3&gt;
+&lt;figure class=&#34;highlight bash&#34;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&#34;gutter&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&#34;code&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;$ hexo generate&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;More info: &lt;a href=&#34;https://hexo.io/docs/generating.html&#34;&gt;Generating&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;deploy-to-remote-sites&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#deploy-to-remote-sites&#34;&gt;#&lt;/a&gt; Deploy to remote sites&lt;/h3&gt;
+&lt;figure class=&#34;highlight bash&#34;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&#34;gutter&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&#34;code&#34;&gt;&lt;pre&gt;&lt;span class=&#34;line&#34;&gt;$ hexo deploy&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;More info: &lt;a href=&#34;https://hexo.io/docs/one-command-deployment.html&#34;&gt;Deployment&lt;/a&gt;&lt;/p&gt;
+ ]]></description>
+        </item>
+    </channel>
+</rss>
