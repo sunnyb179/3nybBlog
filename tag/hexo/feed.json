@@ -1,0 +1,19 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "title": "Rikka 3nyb • All posts by \"hexo\" tag",
+    "description": "我还没有写简介",
+    "home_page_url": "http://3nyb.com",
+    "items": [
+        {
+            "id": "http://3nyb.com/2024/10/01/Hello-Hexo/",
+            "url": "http://3nyb.com/2024/10/01/Hello-Hexo/",
+            "title": "Hello Hexo",
+            "date_published": "2024-10-02T03:52:14.000Z",
+            "content_html": "<h1 id=\"第一次自己做网站\"><a class=\"markdownIt-Anchor\" href=\"#第一次自己做网站\">#</a> 第一次自己做网站！</h1>\n<h2 id=\"你好呀~\"><a class=\"markdownIt-Anchor\" href=\"#你好呀~\">#</a> 你好呀～</h2>\n<p>哇！好开心，终于自己也要做一个自己的博客了！虽然说这个篇博客不是我的第一个博客，但想想说我还是来记录下我博客制作的过程吧。</p>\n<h2 id=\"哈哈哈怎么会想到做博客\"><a class=\"markdownIt-Anchor\" href=\"#哈哈哈怎么会想到做博客\">#</a> 哈哈哈，怎么会想到做博客？</h2>\n<p>首先，制作博客的契机呢，是想巩固我的编程只是和提高我的实践能力，我想把学到的知识都记录在这个博客当中。</p>\n<p>呃呃呃，感觉博客不顺口，还是称作 Blog 吧。</p>\n<p>首先要感谢我的超级无敌行动派，<a href=\"https://www.whyian.dev/about/\">阿兰先生</a>给我提供最初的想法，思路以及框架。</p>\n<p>他所推荐的这个<a href=\"https://hexo.io/zh-cn/\" title=\"hexo\"> Hexo</a> 框架是真的快捷方便易上手。<br>\n之后他还指导我如何在<a href=\"https://vercel.com/\"> Squarespace</a> 购买域名，<br>\n并且把网站通过<a href=\"https://domains.squarespace.com/\"> Vercel</a> 部署到域名上。<br>\n我在一个小时内就都搞定啦，真的是太棒啦！真是方便简单的过程！</p>\n<p>有机会把这个流程也写一个 blog 吧！（开始挖坑</p>\n<p>我还要写一个 Todo！</p>\n<p>真的感谢阿兰！</p>\n<p>做完这些之后呢，我就开始考虑美化网站。。。<br>\n但是感觉有很多东西需要学习，css， html， javaScript，markdown 还有很多工具和库，都要慢慢摸索。</p>\n<p>所以呢我最终决定找一个还不错的模版先用着，顺便学习这些模版的构成，或许会学会怎么创作自己的模版呢！</p>\n<p>我之后就到处转转，逛大佬们的博客，那些做主题的大佬们都好厉害呀。不过也太多老二次元了哈哈哈哈，浓度太高辣！（我好喜欢嘿嘿嘿</p>\n<p>我兜兜转转就找到了<a href=\"https://github.com/amehime/hexo-theme-shoka\"> Shoka</a>，这是一个很漂亮速度也很快的模版，很快就被吸引咯。</p>\n<p>马上就开始部署到我的博客咯，前后又是到处调试。艰难地安装上了。遇到了好多问题？例如安装上但是不识别什么的，后来通过 chatGPT 的帮助还是成功力！</p>\n<p>成功部署之后就开始改造咯～</p>\n<p>也挺不容易的，一开始教程没看的很懂。。。尤其是标题编辑，换图片之类的。到处玩一玩之后就是现在这个样子咯，以后肯定会随时继续改造的更个性化的哦！</p>\n<p>我预计下一个目标是制作一个我个人的主页嘛，想学习一下界面的设定方式！今天先分享到这里咯，Adios~</p>\n",
+            "tags": [
+                "diary",
+                "hexo"
+            ]
+        }
+    ]
+}

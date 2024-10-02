@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+    <channel>
+        <title>Rikka 3nyb • Posts by &#34;hexo&#34; tag</title>
+        <link>http://3nyb.com</link>
+        <description>我还没有写简介</description>
+        <language>en</language>
+        <pubDate>Tue, 01 Oct 2024 22:52:14 -0500</pubDate>
+        <lastBuildDate>Tue, 01 Oct 2024 22:52:14 -0500</lastBuildDate>
+        <category>test</category>
+        <category>diary</category>
+        <category>hexo</category>
+        <item>
+            <guid isPermalink="true">http://3nyb.com/2024/10/01/Hello-Hexo/</guid>
+            <title>Hello Hexo</title>
+            <link>http://3nyb.com/2024/10/01/Hello-Hexo/</link>
+            <category>diary</category>
+            <category>hexo</category>
+            <pubDate>Tue, 01 Oct 2024 22:52:14 -0500</pubDate>
+            <description><![CDATA[ &lt;h1 id=&#34;第一次自己做网站&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#第一次自己做网站&#34;&gt;#&lt;/a&gt; 第一次自己做网站！&lt;/h1&gt;
+&lt;h2 id=&#34;你好呀~&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#你好呀~&#34;&gt;#&lt;/a&gt; 你好呀～&lt;/h2&gt;
+&lt;p&gt;哇！好开心，终于自己也要做一个自己的博客了！虽然说这个篇博客不是我的第一个博客，但想想说我还是来记录下我博客制作的过程吧。&lt;/p&gt;
+&lt;h2 id=&#34;哈哈哈怎么会想到做博客&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#哈哈哈怎么会想到做博客&#34;&gt;#&lt;/a&gt; 哈哈哈，怎么会想到做博客？&lt;/h2&gt;
+&lt;p&gt;首先，制作博客的契机呢，是想巩固我的编程只是和提高我的实践能力，我想把学到的知识都记录在这个博客当中。&lt;/p&gt;
+&lt;p&gt;呃呃呃，感觉博客不顺口，还是称作 Blog 吧。&lt;/p&gt;
+&lt;p&gt;首先要感谢我的超级无敌行动派，&lt;a href=&#34;https://www.whyian.dev/about/&#34;&gt;阿兰先生&lt;/a&gt;给我提供最初的想法，思路以及框架。&lt;/p&gt;
+&lt;p&gt;他所推荐的这个&lt;a href=&#34;https://hexo.io/zh-cn/&#34; title=&#34;hexo&#34;&gt; Hexo&lt;/a&gt; 框架是真的快捷方便易上手。&lt;br&gt;
+之后他还指导我如何在&lt;a href=&#34;https://vercel.com/&#34;&gt; Squarespace&lt;/a&gt; 购买域名，&lt;br&gt;
+并且把网站通过&lt;a href=&#34;https://domains.squarespace.com/&#34;&gt; Vercel&lt;/a&gt; 部署到域名上。&lt;br&gt;
+我在一个小时内就都搞定啦，真的是太棒啦！真是方便简单的过程！&lt;/p&gt;
+&lt;p&gt;有机会把这个流程也写一个 blog 吧！（开始挖坑&lt;/p&gt;
+&lt;p&gt;我还要写一个 Todo！&lt;/p&gt;
+&lt;p&gt;真的感谢阿兰！&lt;/p&gt;
+&lt;p&gt;做完这些之后呢，我就开始考虑美化网站。。。&lt;br&gt;
+但是感觉有很多东西需要学习，css， html， javaScript，markdown 还有很多工具和库，都要慢慢摸索。&lt;/p&gt;
+&lt;p&gt;所以呢我最终决定找一个还不错的模版先用着，顺便学习这些模版的构成，或许会学会怎么创作自己的模版呢！&lt;/p&gt;
+&lt;p&gt;我之后就到处转转，逛大佬们的博客，那些做主题的大佬们都好厉害呀。不过也太多老二次元了哈哈哈哈，浓度太高辣！（我好喜欢嘿嘿嘿&lt;/p&gt;
+&lt;p&gt;我兜兜转转就找到了&lt;a href=&#34;https://github.com/amehime/hexo-theme-shoka&#34;&gt; Shoka&lt;/a&gt;，这是一个很漂亮速度也很快的模版，很快就被吸引咯。&lt;/p&gt;
+&lt;p&gt;马上就开始部署到我的博客咯，前后又是到处调试。艰难地安装上了。遇到了好多问题？例如安装上但是不识别什么的，后来通过 chatGPT 的帮助还是成功力！&lt;/p&gt;
+&lt;p&gt;成功部署之后就开始改造咯～&lt;/p&gt;
+&lt;p&gt;也挺不容易的，一开始教程没看的很懂。。。尤其是标题编辑，换图片之类的。到处玩一玩之后就是现在这个样子咯，以后肯定会随时继续改造的更个性化的哦！&lt;/p&gt;
+&lt;p&gt;我预计下一个目标是制作一个我个人的主页嘛，想学习一下界面的设定方式！今天先分享到这里咯，Adios~&lt;/p&gt;
+ ]]></description>
+        </item>
+    </channel>
+</rss>
