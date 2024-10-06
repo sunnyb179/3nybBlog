@@ -5,6 +5,16 @@
     "home_page_url": "http://3nyb.com",
     "items": [
         {
+            "id": "http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/",
+            "url": "http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/",
+            "title": "玩玩图片",
+            "date_published": "2024-10-06T03:26:11.000Z",
+            "content_html": "<p>哈喽啊，今天我来试试上传图片。</p>\n<h1 id=\"上传图片\"><a class=\"markdownIt-Anchor\" href=\"#上传图片\">#</a> 上传图片</h1>\n<p>我来先简单的把图片上传到 assets 文件夹里面。</p>\n<h1 id=\"调用图片\"><a class=\"markdownIt-Anchor\" href=\"#调用图片\">#</a> 调用图片</h1>\n<p>然后用这个语法调取图片？</p>\n<p><code>![图片标题](图片地址)</code></p>\n<p>我们来试一下</p>\n<p><img loading=\"lazy\" data-src=\"USACE_Waco_Lake_and_Dam.jpg\" alt=\"韦科大坝\"></p>\n<p>现在跑一下预览看一下哦～</p>\n<p>嗯？没有么？看样子根目录在 source 文件夹的样子。</p>\n<p>那么我们重新创建一个目录叫做 post images 吧！</p>\n<p>再重新试一下，吧路径写全面</p>\n<p><img loading=\"lazy\" data-src=\"/post_images/USACE_Waco_Lake_and_Dam.jpg\" alt=\"韦科大坝\"></p>\n<p>再跑一次！</p>\n<p>还是不好使？！（其实好使了 hhhh）</p>\n<p>这回看看 shokaX 的教程好了。</p>\n<p>看了一圈才弄明白，原来是我文件夹命名用了空格而链接用_代表空格导致的哈哈哈哈。。。</p>\n<p>好了会上传图片了，起飞～</p>\n",
+            "tags": [
+                "hexo"
+            ]
+        },
+        {
             "id": "http://3nyb.com/2024/10/01/Hello-Hexo/",
             "url": "http://3nyb.com/2024/10/01/Hello-Hexo/",
             "title": "Hello Hexo",
