@@ -8,32 +8,34 @@
     <category term="diary" />
     <category term="hexo" />
     <entry>
-        <id>http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/</id>
+        <id>http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/</id>
         <title>玩玩图片</title>
-        <link rel="alternate" href="http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/"/>
+        <link rel="alternate" href="http://3nyb.com/2024/10/05/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/"/>
         <content type="html">&lt;p&gt;哈喽啊，今天我来试试上传图片。&lt;/p&gt;
 &lt;h1 id=&#34;上传图片&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#上传图片&#34;&gt;#&lt;/a&gt; 上传图片&lt;/h1&gt;
 &lt;p&gt;我来先简单的把图片上传到 assets 文件夹里面。&lt;/p&gt;
 &lt;h1 id=&#34;调用图片&#34;&gt;&lt;a class=&#34;markdownIt-Anchor&#34; href=&#34;#调用图片&#34;&gt;#&lt;/a&gt; 调用图片&lt;/h1&gt;
 &lt;p&gt;然后用这个语法调取图片？&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;![图片标题](图片地址)&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;我们来试一下，教程在&lt;img loading=&#34;lazy&#34; data-src=&#34;https://hexo.io/zh-cn/docs/asset-folders.html&#34; alt=&#34;这里&#34;&gt;&lt;/p&gt;
+&lt;p&gt;我们来试一下，教程在&lt;a href=&#34;https://hexo.io/zh-cn/docs/asset-folders.html&#34;&gt;这里&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img loading=&#34;lazy&#34; data-src=&#34;USACE_Waco_Lake_and_Dam.jpg&#34; alt=&#34;韦科大坝&#34;&gt;&lt;/p&gt;
 &lt;p&gt;现在跑一下预览看一下哦～&lt;/p&gt;
 &lt;p&gt;嗯？没有么？看样子根目录在 source 文件夹的样子。&lt;/p&gt;
 &lt;p&gt;那么我们重新创建一个目录叫做 post images 吧！&lt;/p&gt;
 &lt;p&gt;再重新试一下，吧路径写全面&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; data-src=&#34;/post_images/USACE_Waco_Lake_and_Dam.jpg&#34; alt=&#34;韦科大坝&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; data-src=&#34;/source/assets/post_images/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/Waco_Lake_and_Dam.jpg&#34; alt=&#34;韦科大坝&#34;&gt;&lt;/p&gt;
 &lt;p&gt;再跑一次！&lt;/p&gt;
 &lt;p&gt;还是不好使？！&lt;/p&gt;
 &lt;p&gt;这回看看 shokaX 的教程好了。&lt;/p&gt;
 &lt;p&gt;看了一圈才弄明白，原来是我文件夹命名用了空格而链接用_代表空格导致的哈哈哈哈。。。&lt;/p&gt;
 &lt;p&gt;那既然如此再多加一层文件夹试试咯～&lt;/p&gt;
-&lt;p&gt;&lt;img loading=&#34;lazy&#34; data-src=&#34;/post_images/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/USACE_Waco_Lake_and_Dam.jpg&#34; alt=&#34;韦科大坝&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img loading=&#34;lazy&#34; data-src=&#34;/assets/%E7%8E%A9%E7%8E%A9%E5%9B%BE%E7%89%87/Waco_Lake_and_Dam.jpg&#34; alt=&#34;韦科大坝&#34;&gt;&lt;/p&gt;
 &lt;p&gt;好了会上传图片了，起飞～&lt;/p&gt;
 &lt;p&gt;那么现在来更改一个 post 的主页图片吧～&lt;/p&gt;
-&lt;p&gt;照这个&lt;img loading=&#34;lazy&#34; data-src=&#34;https://shoka.lostyu.me/computer-science/note/theme-shoka-doc/display/#%E8%87%AA%E5%AE%9A%E4%B9%89%E4%B8%BB%E9%A2%98%E5%9B%BE%E7%89%87&#34; alt=&#34;教程&#34;&gt;！&lt;/p&gt;
+&lt;p&gt;照这个&lt;a href=&#34;https://shoka.lostyu.me/computer-science/note/theme-shoka-doc/display/#%E6%96%87%E7%AB%A0%E5%B0%81%E9%9D%A2%E5%9B%BE&#34;&gt;教程&lt;/a&gt;！&lt;/p&gt;
 &lt;p&gt;根据教程只需要创造一个新的 images 文件夹然后再里面放一个同名文件就 ok 咯～&lt;/p&gt;
+&lt;p&gt;竟然不好使？怎么回事？&lt;/p&gt;
+&lt;p&gt;研究了半个小时了。。。我强行搞一下吧，改天继续研究。目前就是把图片放到已经 &lt;code&gt;hexo s&lt;/code&gt;  的版本里。&lt;/p&gt;
 &lt;p&gt;看看吧！&lt;/p&gt;
 </content>
         <category term="hexo" />
