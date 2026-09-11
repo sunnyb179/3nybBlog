@@ -1,0 +1,12 @@
+{
+  "redirects": [
+    { "source": "/2024/:path*", "destination": "/blog/2024/:path*", "permanent": true },
+    { "source": "/archives/:path*", "destination": "/blog/archives/:path*", "permanent": true },
+    { "source": "/tags/:path*", "destination": "/blog/tags/:path*", "permanent": true },
+    { "source": "/tag/:path*", "destination": "/blog/tag/:path*", "permanent": true },
+    { "source": "/categories/:path*", "destination": "/blog/categories/:path*", "permanent": true },
+    { "source": "/rss.xml", "destination": "/blog/rss.xml", "permanent": true },
+    { "source": "/atom.xml", "destination": "/blog/atom.xml", "permanent": true },
+    { "source": "/feed.json", "destination": "/blog/feed.json", "permanent": true }
+  ]
+}
