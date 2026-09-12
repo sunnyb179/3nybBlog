@@ -2980,6 +2980,13 @@
       deactivate: function () {
         resting = false; dropAll(); debris.clear(); canvasPick = null;
         lastBo = -1; blackoutEl.style.opacity = "0"; setIris(1, 0, 0);   // leave no cut-to-black behind
+        // the selection pill and its blurb are only ever written by this world's own updateTags(),
+        // which stops running the instant Loop switches away — clear them here so orbit (which
+        // reuses these same shared #tags elements but never touches .sel/#tag-blurb itself) never
+        // inherits a stale "selected" look or a frozen leftover blurb line.
+        Object.keys(tagEls).forEach(function (id) { tagEls[id].classList.remove("sel"); });
+        if (blurbEl) { blurbEl.classList.remove("show", "soon"); blurbEl.style.opacity = ""; blurbEl.textContent = ""; }
+        blurbFor = null;
       },
       debug: function () {
         return { camAngle: camAngle, camAngleRaw: camAngleRaw, camVel: camVel, formAng: formAng, front: frontIdNow, hole: [Hc.x, Hc.y], holeRpx: holeRpx,
