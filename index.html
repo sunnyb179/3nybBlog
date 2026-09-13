@@ -8,6 +8,18 @@
 <meta name="theme-color" content="#04060b">
 <link rel="icon" href="/blog/assets/favicon.ico">
 <link rel="apple-touch-icon" href="/blog/assets/apple-touch-icon.png">
+<script>
+// Read the saved skin choice (if any) and stamp it on <html> before first paint,
+// so switching skins never causes a flash of the other one on load.
+(function () {
+  var v = "gravity";
+  try {
+    var s = localStorage.getItem("3nyb-skin");
+    if (s === "gravity" || s === "minimal" || s === "orbit") v = s;
+  } catch (e) { /* storage unavailable: fall back to the default below */ }
+  document.documentElement.setAttribute("data-skin", v);
+})();
+</script>
 <style>
   :root {
     color-scheme: dark;
@@ -22,9 +34,99 @@
     --glass-2: rgba(14, 23, 40, .74);
     --radius: 18px;
     --ease: cubic-bezier(.22, .61, .36, 1);
+
+    /* ---- 简约 skin tokens: a separate light palette, always defined, only ever
+       used inside #minimal — the gravity skin keeps reading its own tokens above
+       unchanged regardless of which skin is currently shown. ---- */
+    --m-bg: #f6f7f9;
+    --m-fg: #12151b;
+    --m-fg-2: #444e5c;
+    --m-muted: #7c8798;
+    --m-line: rgba(18, 21, 27, .10);
+    --m-line-strong: rgba(18, 21, 27, .24);
+    --m-accent: #2b6cb0;
+    --m-card: #ffffff;
+    --m-shadow: 0 1px 2px rgba(18, 21, 27, .04), 0 10px 30px rgba(18, 21, 27, .06);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; background: var(--bg); overflow: hidden; }
+  /* the base rule above makes <html> the fixed, non-scrolling viewport for the
+     gravity skin's overlay app; 简约 is a normal document and needs both <html>
+     and <body> to actually scroll — overriding body alone leaves <html> clipping
+     real touch-scroll gestures even though programmatic scrollTo still "worked". */
+  html[data-skin="minimal"] { overflow: auto; height: auto; min-height: 100%; }
+  html[data-skin="minimal"] body { overflow: visible; height: auto; min-height: 100%; background: var(--m-bg); }
+
+  /* ---- skin visibility: exactly one shell is ever shown ---- */
+  html[data-skin="minimal"] #scene,
+  html[data-skin="minimal"] #tags,
+  html[data-skin="minimal"] .top,
+  html[data-skin="minimal"] .ui,
+  html[data-skin="minimal"] #orbit,
+  html[data-skin="minimal"] #clocks,
+  html[data-skin="minimal"] .veil { display: none !important; }
+  html[data-skin="gravity"] #minimal,
+  html[data-skin="gravity"] #orbit { display: none !important; }
+  html[data-skin="orbit"] #minimal,
+  html[data-skin="orbit"] .ui,
+  html[data-skin="orbit"] #clocks { display: none !important; }
+
+  /* ---- the skin menu: fixed top-right, above every skin (a disclosure + listbox) ---- */
+  .skin-menu { position: fixed; top: max(.8rem, env(safe-area-inset-top)); right: 1.1rem; z-index: 50; }
+  .skin-trigger {
+    appearance: none; cursor: pointer; font: inherit;
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .5rem .8rem .5rem .95rem; border-radius: 999px;
+    font-size: .78rem; letter-spacing: .04em; color: rgba(238, 244, 252, .9);
+    background: rgba(9, 15, 27, .72); border: 1px solid rgba(190, 222, 255, .18);
+    backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+    transition: border-color .2s, background .2s;
+  }
+  .skin-trigger .k { color: rgba(238, 244, 252, .5); }
+  .skin-trigger .caret { font-size: .62rem; opacity: .7; transition: transform .2s var(--ease); }
+  .skin-trigger[aria-expanded="true"] .caret { transform: rotate(180deg); }
+  .skin-trigger:hover, .skin-trigger[aria-expanded="true"] { border-color: rgba(190, 222, 255, .42); background: rgba(14, 23, 40, .84); }
+  .skin-trigger:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(191, 227, 255, .6), 0 6px 24px rgba(0, 0, 0, .25); }
+  .skin-list {
+    position: absolute; right: 0; top: calc(100% + .45rem); min-width: 10.5rem;
+    display: flex; flex-direction: column; gap: .15rem; padding: .35rem; margin: 0;
+    background: rgba(9, 15, 27, .86); border: 1px solid rgba(190, 222, 255, .2); border-radius: 14px;
+    backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .4);
+  }
+  .skin-list[hidden] { display: none; }
+  .skin-opt {
+    appearance: none; border: 0; cursor: pointer; font: inherit; text-align: left;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+    padding: .55rem .7rem .55rem 1.7rem; border-radius: 9px; position: relative;
+    font-size: .82rem; color: rgba(238, 244, 252, .82); background: transparent;
+    transition: background .15s, color .15s;
+  }
+  .skin-opt span { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: rgba(238, 244, 252, .42); }
+  .skin-opt::before { content: ""; position: absolute; left: .7rem; top: 50%; width: 6px; height: 6px; border-radius: 50%; transform: translateY(-50%); background: transparent; border: 1px solid rgba(190, 222, 255, .3); }
+  .skin-opt[aria-selected="true"] { color: #fff; }
+  .skin-opt[aria-selected="true"]::before { background: var(--ice); border-color: var(--ice); box-shadow: 0 0 8px var(--ice); }
+  .skin-opt:hover, .skin-opt:focus-visible { background: rgba(191, 227, 255, .12); color: #fff; outline: none; }
+  .skin-opt:focus-visible { box-shadow: inset 0 0 0 2px rgba(191, 227, 255, .6); }
+  .skin-opt[disabled] { opacity: .4; cursor: not-allowed; }
+  /* on the light 简约 shell the same control flips to its palette */
+  html[data-skin="minimal"] .skin-trigger { color: var(--m-fg); background: rgba(255, 255, 255, .86); border-color: var(--m-line-strong); box-shadow: var(--m-shadow); }
+  html[data-skin="minimal"] .skin-trigger .k { color: var(--m-muted); }
+  html[data-skin="minimal"] .skin-trigger:focus-visible { box-shadow: 0 0 0 2px rgba(43, 108, 176, .45); }
+  html[data-skin="minimal"] .skin-list { background: rgba(255, 255, 255, .96); border-color: var(--m-line-strong); box-shadow: 0 14px 40px rgba(18, 21, 27, .16); }
+  html[data-skin="minimal"] .skin-opt { color: var(--m-fg-2); }
+  html[data-skin="minimal"] .skin-opt span { color: var(--m-muted); }
+  html[data-skin="minimal"] .skin-opt::before { border-color: var(--m-line-strong); }
+  html[data-skin="minimal"] .skin-opt[aria-selected="true"] { color: var(--m-fg); }
+  html[data-skin="minimal"] .skin-opt[aria-selected="true"]::before { background: var(--m-accent); border-color: var(--m-accent); box-shadow: none; }
+  html[data-skin="minimal"] .skin-opt:hover, html[data-skin="minimal"] .skin-opt:focus-visible { background: rgba(43, 108, 176, .1); color: var(--m-fg); }
+  html[data-skin="minimal"] .skin-opt:focus-visible { box-shadow: inset 0 0 0 2px rgba(43, 108, 176, .45); }
+  @media (max-width: 760px) {
+    .skin-menu { right: .7rem; }
+    .skin-trigger { padding: .48rem .7rem .48rem .85rem; }
+    .skin-trigger .k { display: none; }
+  }
   body {
     color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC",
@@ -57,15 +159,47 @@
     background: linear-gradient(rgba(191, 227, 255, .5), transparent);
   }
   .tag.show { opacity: .92; }
+  /* the selected station: its label lit and underlined, the blurb above it */
+  .tag.sel { color: #fff; background: rgba(191, 227, 255, .1); box-shadow: inset 0 0 0 1px rgba(191, 227, 255, .28), 0 0 22px rgba(191, 227, 255, .18); text-shadow: 0 0 16px rgba(191, 227, 255, .7); }
+  .tag.sel::after { background: linear-gradient(rgba(191, 227, 255, .85), transparent); height: 14px; bottom: -14px; }
+  .tag-soon.sel { opacity: .8; color: var(--fg-2); }
+  .tag-blurb {
+    position: absolute; left: 0; top: 0; transform: translate(-50%, -100%);
+    max-width: min(22rem, calc(100vw - 2rem)); padding: .3rem .6rem; border-radius: 8px;
+    font-size: .74rem; line-height: 1.5; letter-spacing: .02em; color: var(--fg-2); text-align: center;
+    background: rgba(8, 12, 22, .55); border: 1px solid rgba(191, 227, 255, .14);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none; transition: opacity .3s var(--ease);
+  }
+  .tag-blurb.show { opacity: 1; }
+  .tag-blurb.soon { color: var(--muted); letter-spacing: .12em; font-size: .68rem; }
+  body.in-detail .tag-blurb { opacity: 0 !important; }
   .tag:hover, .tag:focus-visible { background: rgba(191, 227, 255, .08); outline: none; }
   body.in-detail .tag { opacity: 0; pointer-events: none; }
   body.no-gl #tags { display: none; }
+  /* placeholder ("coming soon") stations: same floating-label mechanism as a real project's
+     tag, but visually quieter, and a short pulse in place of navigation on interaction */
+  .tag-soon { color: var(--muted); font-size: .66rem; letter-spacing: .16em; text-shadow: none; }
+  .tag-soon.show { opacity: .42; }
+  .tag-soon::after { background: linear-gradient(rgba(191, 227, 255, .22), transparent); }
+  .tag-soon:hover, .tag-soon:focus-visible { background: transparent; }
+  .tag-soon.pulse { animation: tagSoonPulse .55s var(--ease); }
+  @keyframes tagSoonPulse {
+    0% { opacity: .42; }
+    40% { opacity: .85; color: var(--fg-2); text-shadow: 0 0 18px rgba(191, 227, 255, .6); }
+    100% { opacity: .42; }
+  }
+  /* 引力 has no separate About marker/hit-test — About is the black hole itself. The label below
+     stays: a restrained, always-repositioned hint that clicking the hole opens About. */
+  html[data-skin="gravity"] .tag-about { font-size: .72rem; }
+  html[data-skin="gravity"] .tag-about.show { opacity: .58; }
+  html[data-skin="gravity"] .tag-about:hover, html[data-skin="gravity"] .tag-about:focus-visible { opacity: .85; }
 
   /* ---------- top bar ---------- */
   .top {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 4;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 7;   /* above the horizon page: the back control is never lost */
     display: flex; align-items: center; justify-content: space-between;
-    padding: max(1.1rem, env(safe-area-inset-top)) 1.5rem 0;
+    padding: max(1.1rem, env(safe-area-inset-top)) 8.4rem 0 1.5rem;   /* right inset keeps clear of the fixed skin menu */
     pointer-events: none;
   }
   .brand { font-size: .78rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
@@ -78,7 +212,7 @@
     display: inline-flex; align-items: center; gap: .55rem;
     color: var(--fg); font-size: .84rem; letter-spacing: .04em;
     background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
-    padding: .55rem 1rem .55rem .85rem;
+    padding: .55rem 1rem .55rem .85rem; white-space: nowrap; flex: none;
     backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
     opacity: 0; transform: translateY(-6px); visibility: hidden;
     transition: opacity .35s var(--ease), transform .45s var(--ease), border-color .2s, visibility 0s .35s;
@@ -194,6 +328,42 @@
   #clocks .row.local { color: var(--fg); }
   #clocks .rate { color: var(--ice); }
 
+  /* ---------- custom cursor: a zero-lag core dot + a trailing ring; hidden on touch and
+     whenever the pointer is over a real text field, so typing keeps its native caret ---------- */
+  html.has-cursor, html.has-cursor body { cursor: none; }
+  html.has-cursor input, html.has-cursor textarea, html.has-cursor [contenteditable="true"] { cursor: text; }
+  #cursor {
+    position: fixed; left: 0; top: 0; z-index: 999; pointer-events: none;
+    --near: 0;
+  }
+  #cursor[hidden] { display: none; }
+  #cursor .cur-core, #cursor .cur-ring {
+    position: absolute; left: 0; top: 0; border-radius: 50%;
+    transform: translate3d(-200px, -200px, 0) translate(-50%, -50%);
+  }
+  #cursor .cur-core {
+    width: 7px; height: 7px; background: var(--ice); box-shadow: 0 0 8px var(--ice), 0 0 2px #fff;
+    transition: width .15s var(--ease), height .15s var(--ease), background .15s;
+  }
+  #cursor .cur-ring {
+    width: calc(30px - 12px * var(--near)); height: calc(30px - 12px * var(--near));
+    border: 1.5px solid rgba(191, 227, 255, .55);
+    box-shadow: 0 0 calc(6px + 10px * var(--near)) rgba(191, 227, 255, calc(.15 + .35 * var(--near)));
+    transition: width .12s var(--ease), height .12s var(--ease), border-color .18s, opacity .18s;
+  }
+  #cursor.hover .cur-core { width: 5px; height: 5px; }
+  #cursor.hover .cur-ring { width: 42px; height: 42px; border-color: rgba(191, 227, 255, .8); }
+  #cursor.drag .cur-core { width: 9px; height: 9px; background: #fff; }
+  #cursor.drag .cur-ring { width: 24px; height: 24px; border-color: #fff; opacity: .9; }
+  #cursor.text { opacity: 0; }
+  /* 简约's light background: same cursor language, darker ring so it still reads */
+  html[data-skin="minimal"] #cursor .cur-ring { border-color: rgba(43, 108, 176, .5); box-shadow: none; }
+  html[data-skin="minimal"] #cursor.hover .cur-ring { border-color: rgba(43, 108, 176, .8); }
+  html[data-skin="minimal"] #cursor .cur-core { background: var(--m-accent); box-shadow: 0 0 6px rgba(43, 108, 176, .5); }
+  @media (prefers-reduced-motion: reduce) {
+    #cursor .cur-ring { transition: none; }
+  }
+
   /* ---------- fallbacks ---------- */
   .veil {
     position: fixed; inset: 0; z-index: 5; display: grid; place-items: center;
@@ -209,8 +379,12 @@
     .card { min-height: 0; }
   }
   @media (max-width: 760px) {
-    .top { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .top { padding-left: 1.1rem; padding-right: 5.6rem; }
+    .brand span { display: block; margin-left: 0; margin-top: .15rem; }
     .hint { display: none; }
+    .tag { font-size: .64rem; letter-spacing: .03em; padding: .25rem .4rem; }
+    .tag-soon { font-size: .56rem; letter-spacing: .12em; }
+    .tag-blurb { font-size: .66rem; max-width: calc(100vw - 1.6rem); padding: .25rem .5rem; }
     #overview { padding-left: 1.1rem; padding-right: 1.1rem; }
     .hero { margin-bottom: .9rem; }
     .hero p:not(.small) { font-size: .9rem; }
@@ -239,17 +413,314 @@
     *, *::before, *::after { transition-duration: .01ms !important; }
     .card:hover, .card:focus-visible, .cta:hover { transform: none; }
   }
+
+  /* ================= beyond the horizon =================
+     #blackout is the 3D world's own cut to black, driven per frame by whichever world is
+     falling; #horizon is the reading surface that composes in once the crossing is complete —
+     a full-bleed black page that scrolls on its own, shared by 引力 and 轨道. */
+  #blackout { position: fixed; inset: 0; z-index: 5; background: #000; opacity: 0; pointer-events: none; }
+  /* the iris: black with a circular window cut out of it, driven per frame by the falling world */
+  #iris { position: fixed; inset: 0; z-index: 5; display: none; pointer-events: none; }
+  /* the debris layer sits above the page beyond the horizon (same z, later in the DOM) */
+  #trail { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; display: block; }
+  html[data-skin="minimal"] #iris, html[data-skin="minimal"] #trail, html[data-skin="orbit"] #trail, body.no-gl #trail, body.no-gl #iris { display: none !important; }
+  /* on a project page the line down the middle is drawn by the debris layer; the element stays as its slot */
+  #hz-project .hz-line { visibility: hidden; }
+  body.no-gl #hz-project .hz-line { visibility: visible; }
+  #horizon {
+    position: fixed; inset: 0; z-index: 6; background: #000; color: #b8c6d9;
+    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain; touch-action: pan-y;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .6s var(--ease), visibility 0s .6s;
+    scrollbar-width: thin; scrollbar-color: rgba(190, 222, 255, .16) transparent;
+  }
+  body.horizon-on #horizon { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+  #horizon.hz-instant, #horizon.hz-instant * { transition: none !important; animation: none !important; }
+  html[data-skin="minimal"] #horizon, html[data-skin="minimal"] #blackout { display: none !important; }
+  html[data-skin="minimal"] #iris { display: none !important; }
+  body.horizon-on #tags, body.horizon-on #clocks { display: none; }
+
+  /* layered light: two slow, very dim cold pools that the page floats over */
+  .hz-light { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .hz-light i {
+    position: absolute; border-radius: 50%; opacity: 0; filter: blur(70px);
+    transition: opacity 2.6s ease .5s;
+  }
+  .hz-light .a { width: 64vmax; height: 64vmax; left: -22vmax; top: -34vmax; background: radial-gradient(circle, rgba(110, 160, 225, .20), transparent 62%); animation: hzDriftA 28s ease-in-out infinite alternate; }
+  .hz-light .b { width: 54vmax; height: 54vmax; right: -18vmax; bottom: -28vmax; background: radial-gradient(circle, rgba(191, 227, 255, .13), transparent 62%); animation: hzDriftB 34s ease-in-out infinite alternate; }
+  .hz-light .c { width: 30vmax; height: 30vmax; left: 46%; top: 30%; background: radial-gradient(circle, rgba(191, 227, 255, .07), transparent 60%); animation: hzDriftA 40s ease-in-out infinite alternate-reverse; }
+  body.horizon-on .hz-light i { opacity: 1; }
+  @keyframes hzDriftA { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(6vmax, 5vmax, 0); } }
+  @keyframes hzDriftB { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-5vmax, -7vmax, 0); } }
+
+  .hz-page { position: relative; min-height: 100%; padding: 8.5rem 0 6rem; display: none; }
+  #horizon[data-page="about"] #hz-about, #horizon[data-page="project"] #hz-project { display: block; }
+  .hz-wrap { width: min(74rem, 100% - 3.6rem); margin: 0 auto; }
+  #hz-about .hz-wrap { width: min(46rem, 100% - 3.6rem); }
+  .hz-kicker { font-size: .72rem; letter-spacing: .36em; text-transform: uppercase; color: #6f86a6; margin: 0 0 1.4rem; }
+  .hz-page h2 {
+    font-size: clamp(2.7rem, 7.2vw, 6.4rem); font-weight: 600; letter-spacing: -.035em; line-height: .98;
+    margin: 0 0 1.1rem; outline: none;
+    background: linear-gradient(180deg, #ffffff 0%, #cfe2f7 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hz-page .sub { font-size: clamp(1.05rem, 1.7vw, 1.35rem); color: #9fb3cc; line-height: 1.5; margin: 0 0 2rem; }
+  .hz-page p { color: #b8c6d9; font-size: clamp(1rem, 1.25vw, 1.12rem); line-height: 1.95; margin: 0 0 1.4rem; max-width: 38rem; }
+  .hz-page h3 {
+    font-size: .68rem; letter-spacing: .32em; text-transform: uppercase; color: #6f86a6; font-weight: 600;
+    margin: 2.8rem 0 1.1rem; padding-top: 1.3rem; border-top: 1px solid rgba(190, 222, 255, .12); max-width: 38rem;
+  }
+  .hz-page ol, .hz-page ul { margin: 0 0 1.4rem; padding-left: 1.3rem; color: #b8c6d9; font-size: clamp(1rem, 1.2vw, 1.08rem); line-height: 1.9; max-width: 38rem; }
+  .hz-page li { margin: 0 0 .55rem; }
+  .hz-page li::marker { color: #7ea3cf; }
+  .hz-page .who { display: flex; align-items: center; gap: 1.1rem; margin: 0 0 2.2rem; }
+  .hz-page .who img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(190, 222, 255, .22); box-shadow: 0 0 44px rgba(110, 160, 225, .18); }
+  .hz-page .who .n { font-weight: 600; color: #eef4fc; font-size: 1.05rem; }
+  .hz-page .who .h { color: #7488a3; font-size: .8rem; letter-spacing: .1em; margin-top: .15rem; }
+  .hz-page .facts { display: grid; grid-template-columns: auto 1fr; gap: .65rem 2.2rem; margin: 0 0 2.2rem; font-size: 1rem; max-width: 38rem; }
+  .hz-page .facts dt { color: #6f86a6; letter-spacing: .06em; }
+  .hz-page .facts dd { margin: 0; color: #d6e2f0; }
+  .hz-page .facts a { color: #eef4fc; text-decoration: none; border-bottom: 1px solid rgba(190, 222, 255, .35); }
+  .hz-page .facts a:hover { border-color: #fff; }
+  .hz-page .cta { padding: .85rem 1.5rem; font-size: .95rem; margin-top: 1.2rem; background: #eef4fc; box-shadow: 0 0 40px rgba(191, 227, 255, .18); }
+  .hz-page .cta:hover, .hz-page .cta:focus-visible { background: #fff; box-shadow: 0 0 56px rgba(191, 227, 255, .32); }
+  .hz-page .status { margin-top: 1.2rem; }
+  .hz-rule {
+    height: 1px; width: 100%; max-width: 38rem; margin: .4rem 0 3.2rem; transform-origin: left;
+    background: linear-gradient(90deg, rgba(191, 227, 255, .75), #fff 45%, rgba(191, 227, 255, .5) 75%, transparent);
+  }
+
+  /* the project page: one thin luminous line down the middle, framing on the left, the text on the right */
+  .hz-split { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0 5.5rem; align-items: start; }
+  .hz-left { position: sticky; top: 8.5rem; padding-right: 1rem; transform: translate3d(0, calc(var(--hz-y, 0px) * -.07), 0); }
+  .hz-right { padding-left: 1rem; padding-top: .8rem; }
+  .hz-glyph { width: clamp(6rem, 11vw, 9.5rem); height: clamp(6rem, 11vw, 9.5rem); color: rgba(191, 227, 255, .6); margin: 0 0 2.4rem -.4rem; filter: drop-shadow(0 0 26px rgba(191, 227, 255, .35)); transform: translate3d(0, calc(var(--hz-y, 0px) * -.05), 0); }
+  .hz-glyph svg { width: 100%; height: 100%; display: block; }
+  .hz-line {
+    position: absolute; left: calc(50% - .5px); top: -3rem; bottom: -3rem; width: 1px; transform-origin: top;
+    background: linear-gradient(180deg, transparent, rgba(191, 227, 255, .5) 10%, rgba(191, 227, 255, .55) 90%, transparent);
+  }
+  .hz-line::before {
+    content: ""; position: absolute; left: -1px; top: 0; width: 3px; height: 100%; opacity: .95; filter: blur(.5px);
+    background: linear-gradient(180deg, transparent 0%, transparent 38%, rgba(255, 255, 255, .95) 50%, transparent 62%, transparent 100%);
+    background-size: 100% 260%; animation: hzFlow 6s linear infinite;
+  }
+  @keyframes hzFlow { from { background-position: 0 100%; } to { background-position: 0 0%; } }
+
+  .hz-foot {
+    margin-top: 6rem; padding-top: 2rem; border-top: 1px solid rgba(190, 222, 255, .12);
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+    color: #6f86a6; font-size: .76rem; letter-spacing: .14em;
+  }
+  .hz-return {
+    appearance: none; font: inherit; cursor: pointer; letter-spacing: .04em; font-size: .9rem;
+    border: 1px solid rgba(190, 222, 255, .32); background: transparent; color: #eef4fc;
+    padding: .78rem 1.35rem; border-radius: 999px; transition: border-color .2s, background .2s;
+  }
+  .hz-return:hover, .hz-return:focus-visible { border-color: rgba(190, 222, 255, .8); background: rgba(191, 227, 255, .08); outline: none; }
+
+  /* progressive reveal: each block rises as it scrolls into view, staggered by --i */
+  .hz-reveal { opacity: 0; transform: translate3d(0, 28px, 0); transition: opacity 1s var(--ease), transform 1.25s var(--ease); transition-delay: calc(var(--i, 0) * 80ms); }
+  .hz-reveal.in { opacity: 1; transform: none; }
+  .hz-left.hz-reveal, .hz-glyph.hz-reveal { transition-property: opacity; }
+  .hz-rule.hz-reveal { transform: scaleX(0); transition-duration: 1.4s, 1.6s; }
+  .hz-line.hz-reveal { transform: scaleY(0); transition-duration: 1.2s, 2.2s; }
+  .hz-rule.hz-reveal.in, .hz-line.hz-reveal.in { transform: none; }
+
+  @media (max-width: 760px) {
+    .hz-page { padding: 6.6rem 0 4rem; }
+    .hz-wrap, #hz-about .hz-wrap { width: calc(100% - 2.2rem); }
+    .hz-split { grid-template-columns: 1fr; gap: 0; }
+    .hz-left { position: static; transform: none; padding-right: 0; }
+    .hz-glyph { transform: none; margin-bottom: 1.6rem; }
+    .hz-line {
+      position: static; width: 100%; height: 1px; margin: 1.4rem 0 2rem; transform-origin: left;
+      background: linear-gradient(90deg, rgba(191, 227, 255, .75), #fff 45%, rgba(191, 227, 255, .5) 75%, transparent);
+    }
+    .hz-line::before { display: none; }
+    .hz-line.hz-reveal { transform: scaleX(0); }
+    .hz-right { padding-left: 1.1rem; padding-top: 0; border-left: 1px solid rgba(191, 227, 255, .16); }
+    .hz-page h3 { margin-top: 2rem; }
+    .hz-foot { margin-top: 4rem; }
+    .hz-kicker { letter-spacing: .2em; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #horizon { transition: none; }
+    .hz-reveal { opacity: 1; transform: none; transition: none; }
+    .hz-line::before, .hz-light i { animation: none; }
+    .hz-left, .hz-glyph { transform: none; }
+  }
+
+  /* ================= 简约 skin ================= */
+  #minimal { color: var(--m-fg); }
+  #minimal ::selection { background: rgba(43, 108, 176, .18); }
+
+  .m-nav {
+    position: sticky; top: 0; z-index: 6;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: .6rem 1rem;
+    padding: 1rem 8.4rem 1rem 1.5rem; padding-top: max(1rem, env(safe-area-inset-top));   /* right inset: the fixed skin menu */
+    background: rgba(246, 247, 249, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--m-line);
+  }
+  .m-brand { font-size: .82rem; letter-spacing: .1em; color: var(--m-fg); font-weight: 600; }
+  .m-brand span { margin-left: .7em; font-weight: 400; letter-spacing: .06em; color: var(--m-muted); }
+  .m-links { display: flex; gap: .3rem; flex-wrap: wrap; }
+  .m-links button {
+    appearance: none; border: 0; cursor: pointer; font: inherit;
+    background: transparent; color: var(--m-fg-2); font-size: .84rem; letter-spacing: .02em;
+    padding: .45rem .7rem; border-radius: 8px; transition: background .2s, color .2s;
+  }
+  .m-links button:hover { background: var(--m-line); color: var(--m-fg); }
+  .m-links button:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 1px; }
+  .m-links button[aria-current="page"] { color: var(--m-accent); font-weight: 600; }
+
+  .m-main { max-width: 52rem; margin: 0 auto; padding: 2.6rem 1.5rem 6rem; }
+  .m-card {
+    background: var(--m-card); border: 1px solid var(--m-line); border-radius: 20px;
+    box-shadow: var(--m-shadow); padding: 1.9rem 2rem 2.1rem; margin: 0 0 1.1rem;
+    scroll-margin-top: 5.5rem;               /* keep the heading clear of the sticky nav on scroll/focus */
+  }
+  .m-hero { display: flex; flex-direction: column; gap: 0; }
+  .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 0 0 1.1rem; }
+  .m-grid > .m-card { margin: 0; }
+
+  #minimal .kicker { font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--m-muted); margin: 0 0 .5rem; }
+  #minimal h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.015em; line-height: 1.2; margin: 0 0 .3rem; color: var(--m-fg); outline: none; }
+  #minimal .sub { color: var(--m-fg-2); font-size: .96rem; margin: 0 0 1rem; line-height: 1.55; }
+  #minimal p { color: var(--m-fg-2); font-size: .94rem; line-height: 1.72; margin: 0 0 .85rem; }
+  #minimal h3 { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--m-muted); margin: 1.15rem 0 .5rem; font-weight: 700; }
+  #minimal ol, #minimal ul { margin: 0 0 .85rem; padding-left: 1.2rem; color: var(--m-fg-2); font-size: .94rem; line-height: 1.65; }
+  #minimal li { margin: 0 0 .3rem; }
+  #minimal li::marker { color: var(--m-muted); }
+  #minimal .who { display: flex; align-items: center; gap: .9rem; margin: 0 0 1.1rem; }
+  #minimal .who img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 1px solid var(--m-line); }
+  #minimal .who .n { font-weight: 700; color: var(--m-fg); }
+  #minimal .who .h { color: var(--m-muted); font-size: .82rem; letter-spacing: .03em; }
+  #minimal .facts { display: grid; grid-template-columns: auto 1fr; gap: .4rem 1rem; margin: 0 0 1rem; font-size: .88rem; }
+  #minimal .facts dt { color: var(--m-muted); }
+  #minimal .facts dd { margin: 0; color: var(--m-fg-2); }
+  #minimal .facts a { color: var(--m-accent); text-decoration: none; border-bottom: 1px solid transparent; }
+  #minimal .facts a:hover { border-color: currentColor; }
+  #minimal .cta {
+    display: inline-flex; align-items: center; gap: .45rem; margin-top: .3rem;
+    padding: .65rem 1.2rem; border-radius: 999px;
+    background: var(--m-accent); color: #fff; text-decoration: none;
+    font-weight: 600; font-size: .88rem; letter-spacing: .01em;
+    transition: transform .2s var(--ease), background .2s;
+  }
+  #minimal .cta:hover, #minimal .cta:focus-visible { transform: translateY(-1px); background: #235a91; outline: none; }
+  #minimal .cta:focus-visible { box-shadow: 0 0 0 2px rgba(43, 108, 176, .35); }
+
+  .m-foot {
+    max-width: 52rem; margin: 0 auto; padding: 0 1.5rem 3rem;
+    color: var(--m-muted); font-size: .78rem; letter-spacing: .04em;
+  }
+
+  @media (max-width: 720px) {
+    .m-nav { padding: .9rem 5.6rem .9rem 1.1rem; }
+    .m-brand span { display: block; margin-left: 0; margin-top: .15rem; }
+    .m-main { padding: 1.8rem 1.1rem 4.5rem; }
+    .m-card { padding: 1.4rem 1.3rem 1.6rem; border-radius: 16px; }
+    .m-grid { grid-template-columns: 1fr; }
+    #minimal h2 { font-size: 1.3rem; }
+  }
+  /* ================= 轨道 skin ================= */
+  #orbit { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+  #o-overview {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 0 1.5rem max(1.4rem, env(safe-area-inset-bottom));
+    transition: opacity .45s var(--ease), transform .6s var(--ease), visibility 0s;
+  }
+  #o-overview.off { opacity: 0; transform: translateY(22px); visibility: hidden; transition-delay: 0s, 0s, .45s; }
+  #o-overview .hero { margin-bottom: 1rem; max-width: 40rem; padding-right: 17rem; }
+  .o-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; pointer-events: auto; }
+  .o-nav button {
+    appearance: none; cursor: pointer; font: inherit;
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .6rem 1rem; border-radius: 999px; min-height: 2.6rem;
+    font-size: .82rem; letter-spacing: .03em; color: var(--fg);
+    background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+    transition: border-color .2s, background .2s, transform .3s var(--ease);
+  }
+  .o-nav button i { width: 8px; height: 8px; border-radius: 50%; background: var(--ice); box-shadow: 0 0 8px var(--ice); opacity: .85; }
+  .o-nav button[data-scene="about"] i { background: #05080f; box-shadow: 0 0 0 1.5px var(--ice), 0 0 10px var(--ice); }
+  .o-nav button[data-scene="faith"] i { box-shadow: 0 0 0 2px rgba(191, 227, 255, .35), 0 0 8px var(--ice); }
+  .o-nav button[data-scene="blog"] i { background: linear-gradient(180deg, #eaf4ff 0 30%, #7ea9dc 30% 55%, #e4f0ff 55% 78%, #6f97c8 78%); }
+  .o-nav button:hover, .o-nav button:focus-visible { border-color: var(--line-strong); background: var(--glass-2); transform: translateY(-2px); outline: none; }
+  .o-nav button:focus-visible { box-shadow: 0 0 0 2px rgba(191, 227, 255, .55); }
+
+  /* the distance control + its readout: a purely visual "warp" meter, no physics claimed */
+  .o-warp {
+    position: absolute; right: 1.5rem; bottom: max(1.4rem, env(safe-area-inset-bottom));
+    width: 15.5rem; padding: .85rem 1rem .9rem; pointer-events: auto;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 16px;
+    backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+    transition: opacity .35s var(--ease), border-color .2s;
+  }
+  .o-warp-head { display: flex; justify-content: space-between; align-items: baseline; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .o-warp-head b { font-size: .86rem; letter-spacing: .02em; color: var(--ice); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .o-meter { height: 4px; margin: .55rem 0 .75rem; border-radius: 999px; background: rgba(190, 222, 255, .12); overflow: hidden; }
+  .o-meter i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #4f83c8, #bfe3ff 70%, #fff); box-shadow: 0 0 10px rgba(191, 227, 255, .6); transition: width .12s linear; }
+  .o-dist-row { display: flex; align-items: center; gap: .6rem; font-size: .72rem; letter-spacing: .1em; color: var(--fg-2); }
+  .o-dist-row input {
+    flex: 1; min-width: 0; margin: 0; height: 28px; cursor: pointer;
+    accent-color: var(--ice); background: transparent;
+  }
+  .o-dist-row input:focus-visible { outline: 2px solid rgba(191, 227, 255, .6); outline-offset: 2px; border-radius: 6px; }
+  .o-warp-tip { margin: .45rem 0 0; font-size: .68rem; letter-spacing: .06em; color: var(--muted); }
+  body.in-detail .o-dist-row, body.in-detail .o-warp-tip { display: none; }
+  body.in-detail .o-warp { right: auto; left: 1.5rem; width: 13rem; }
+
+  @media (max-width: 760px) {
+    #o-overview { padding-left: 1.1rem; padding-right: 1.1rem; }
+    #o-overview .hero { padding-right: 0; margin-bottom: .8rem; }
+    #o-overview .hero p:not(.kicker) { font-size: .86rem; }
+    .o-nav button { padding: .55rem .85rem; font-size: .8rem; }
+    .o-warp {
+      left: .8rem; right: .8rem; bottom: auto; top: calc(max(1.1rem, env(safe-area-inset-top)) + 3rem);
+      width: auto; padding: .6rem .85rem .65rem; border-radius: 12px;
+    }
+    .o-meter { margin: .4rem 0 .5rem; }
+    .o-warp-tip { display: none; }
+    body.in-detail .o-warp { display: none; }
+  }
+  @media (max-height: 640px) and (max-width: 760px) {
+    #o-overview .hero p:not(.kicker) { display: none; }
+  }
+  @media (max-height: 560px) and (min-width: 761px) {
+    #o-overview .hero p:not(.kicker) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .o-nav button:hover, .o-nav button:focus-visible { transform: none; }
+  }
 </style>
 </head>
 <body>
 
+<div class="skin-menu" id="skin-menu">
+  <button type="button" class="skin-trigger" id="skin-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="skin-list" aria-label="页面风格">
+    <span class="k">风格</span><span class="v" id="skin-trigger-v">引力</span><span class="caret" aria-hidden="true">▾</span>
+  </button>
+  <div class="skin-list" id="skin-list" role="listbox" aria-label="页面风格" hidden>
+    <button type="button" class="skin-opt" role="option" data-skin-opt="gravity" aria-selected="true">引力<span>Gravity</span></button>
+    <button type="button" class="skin-opt" role="option" data-skin-opt="orbit" aria-selected="false">轨道<span>Orbit</span></button>
+    <button type="button" class="skin-opt" role="option" data-skin-opt="minimal" aria-selected="false">简约<span>Minimal</span></button>
+  </div>
+</div>
+
 <canvas id="scene" aria-hidden="true"></canvas>
 
 <div id="tags" aria-hidden="true">
-  <button class="tag" type="button" data-scene="about" tabindex="-1">关于</button>
+  <button class="tag tag-about" type="button" data-scene="about">About me</button>
   <button class="tag" type="button" data-scene="ideator" tabindex="-1">Startup Ideator</button>
   <button class="tag" type="button" data-scene="faith" tabindex="-1">Faith Connected</button>
   <button class="tag" type="button" data-scene="blog" tabindex="-1">Blog</button>
+  <button class="tag tag-soon" type="button" data-scene="soon1" tabindex="-1">敬请期待</button>
+  <button class="tag tag-soon" type="button" data-scene="soon2" tabindex="-1">敬请期待</button>
+  <div class="tag-blurb" id="tag-blurb"></div>
 </div>
 
 <div id="clocks" aria-live="off">
@@ -260,7 +731,7 @@
 
 <header class="top">
   <div class="brand"><b>Zhongbo Sun</b><span>Rikka · 3nyb</span></div>
-  <div class="hint" id="hint">移动指针牵引奇点 · 按住加速局部时间</div>
+  <div class="hint" id="hint">拖动或点击标记坠向黑洞 · 点击黑洞坠入</div>
   <button class="back" id="back" type="button" aria-label="返回总览">← 返回 <kbd>Esc</kbd></button>
 </header>
 
@@ -269,8 +740,8 @@
     <div class="hero">
       <p class="kicker">Rikka · 3nyb</p>
       <h1>Zhongbo Sun</h1>
-      <p>正在做一个关于奇点与时间的游戏原型：一个跟随鼠标的引力奇点，会在周围造出一片局部的时间畸变场。这个主页沿用了同一个想法——移动指针牵引奇点，按住让局部时间加速。</p>
-      <p class="small" id="hint-mobile" hidden>触摸牵引奇点 · 长按加速局部时间</p>
+      <p>正在做一个关于奇点与时间的游戏原型：一个跟随鼠标的引力奇点，会在周围造出一片局部的时间畸变场。这个主页沿用了同一个想法——鼠标越靠近黑洞，局部时间就流逝得越快，外部真实时间不受影响；把一个标记拖向黑洞，它会碎成一串余烬，然后你跟着这串余烬一起坠入视界。</p>
+      <p class="small" id="hint-mobile" hidden>点标记坠入黑洞 · 点黑洞进入关于</p>
     </div>
     <ul class="cards">
       <li>
@@ -290,7 +761,7 @@
       <li>
         <button class="card" type="button" data-scene="faith">
           <span class="glyph" aria-hidden="true"><svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="18" cy="18" r="14" stroke-dasharray="2.5 3.2" opacity=".5"/><path d="M11.5 22.5L24.5 13.5" opacity=".7"/><circle cx="11.5" cy="22.5" r="3" fill="currentColor" stroke="none" opacity=".9"/><circle cx="24.5" cy="13.5" r="3" fill="currentColor" stroke="none" opacity=".9"/></svg></span>
-          <span><span class="t">Faith Connected</span><span class="s">信仰社群</span><span class="d">面向信仰社群的连接工具：按宗派、堂会、角色与可用时间彼此找到。</span></span>
+          <span><span class="t">Faith Connected</span><span class="s">信仰陪伴</span><span class="d">与牧者和 AI 全天候对话，获取扎根经文的信仰引导与陪伴。</span></span>
           <span class="arrow" aria-hidden="true">→</span>
         </button>
       </li>
@@ -313,7 +784,7 @@
       <div><div class="n">Zhongbo Sun</div><div class="h">GitHub @sunnyb179</div></div>
     </div>
     <p>目前在做一个 Godot 游戏原型：一个跟随鼠标的引力奇点，会在它周围造出一片局部的时间畸变场——离奇点越近，时间流逝的速率越不一样。</p>
-    <p>这个主页的黑洞、引力网格和「按住加速局部时间」，就是从那个原型直接借来的。</p>
+    <p>这个主页的黑洞、引力网格和「越靠近黑洞局部时间越快」，就是从那个原型直接借来的。</p>
     <h3>索引</h3>
     <dl class="facts">
       <dt>称呼</dt><dd>Rikka / 3nyb</dd>
@@ -337,14 +808,15 @@
     </ol>
     <h3>之后的工具</h3>
     <p>商业计划书生成、商业模式画布、30 秒到 5 分钟的 pitch 生成、pitch deck 生成、市场与竞品分析、原型 / 样机 / 落地页构建、用户验证工具（访谈脚本）、联合创始人匹配，以及面向比赛与加速器的申请材料生成。</p>
-    <a class="cta" href="https://startup-navigator-frontend.vercel.app" target="_blank" rel="noopener">打开 Startup Ideator ↗</a>
+    <a class="cta" href="https://www.startupideator.org/" target="_blank" rel="noopener">打开 Startup Ideator ↗</a>
   </section>
 
   <section class="detail" data-scene="faith" aria-hidden="true">
-    <p class="kicker">Faith Connected · 信仰社群</p>
+    <p class="kicker">Faith Connected · 信仰陪伴</p>
     <h2 tabindex="-1">Faith Connected</h2>
-    <p class="sub">为信仰社群做的连接工具。</p>
-    <p>帮助同一个信仰社群里的人彼此找到：用户档案包含宗派、角色（例如「祷告」）、所属堂会、可用时间和会员状态——用于祷告伙伴配对与堂会内的联络。</p>
+    <p class="sub">随时随地，与牧者和 AI 展开个性化的信仰对话。</p>
+    <p>一个信仰陪伴平台：全天候与牧者及 AI 进行个性化对话，获取信仰引导，内容扎根经文并经学者审阅，定位是对线下堂会体验的补充而非替代；对话保密，不会向所在堂会公开。也让牧者一方能够在线安排咨询、把服务延伸到更广的数字化社群。</p>
+    <a class="cta" href="https://www.faithconnected.org/" target="_blank" rel="noopener">打开 Faith Connected ↗</a>
   </section>
 
   <section class="detail" data-scene="blog" aria-hidden="true">
@@ -355,6 +827,65 @@
     <a class="cta" href="/blog/">进入 Blog →</a>
   </section>
 </div>
+
+<div id="minimal">
+  <header class="m-nav">
+    <div class="m-brand">Zhongbo Sun<span>Rikka · 3nyb</span></div>
+    <nav class="m-links" aria-label="导航">
+      <button type="button" data-scene="about">关于</button>
+      <button type="button" data-scene="ideator">Startup Ideator</button>
+      <button type="button" data-scene="faith">Faith Connected</button>
+      <button type="button" data-scene="blog">Blog</button>
+    </nav>
+  </header>
+  <main class="m-main">
+    <section class="m-card m-hero" id="m-about"></section>
+    <div class="m-grid">
+      <section class="m-card" id="m-ideator"></section>
+      <section class="m-card" id="m-faith"></section>
+    </div>
+    <section class="m-card" id="m-blog"></section>
+  </main>
+  <footer class="m-foot">Zhongbo Sun · Rikka / 3nyb</footer>
+</div>
+
+<div id="orbit">
+  <section id="o-overview" aria-label="总览">
+    <div class="hero">
+      <p class="kicker">Rikka · 3nyb</p>
+      <h1>Zhongbo Sun</h1>
+      <p>中央的黑洞是「关于」，绕着它转的三颗行星是 Startup Ideator、Faith Connected 和 Blog。点一颗行星靠过去，点黑洞就会被拉进去——离黑洞越近，画面里的时间就越扭曲。</p>
+    </div>
+    <ul class="o-nav" aria-label="场景">
+      <li><button type="button" data-scene="about"><i aria-hidden="true"></i>关于</button></li>
+      <li><button type="button" data-scene="ideator"><i aria-hidden="true"></i>Startup Ideator</button></li>
+      <li><button type="button" data-scene="faith"><i aria-hidden="true"></i>Faith Connected</button></li>
+      <li><button type="button" data-scene="blog"><i aria-hidden="true"></i>Blog</button></li>
+    </ul>
+  </section>
+  <div class="o-warp" id="o-warp">
+    <div class="o-warp-head"><span>时间畸变 · 视觉效果</span><b id="o-warp-pct">0%</b></div>
+    <div class="o-meter" aria-hidden="true"><i id="o-meter-fill"></i></div>
+    <label class="o-dist-row"><span>远</span><input type="range" id="o-dist" min="0" max="100" value="18" aria-label="与黑洞的距离（从远到近）"><span>近</span></label>
+    <p class="o-warp-tip">滚轮 · 双指缩放 · 拖动滑块，靠近黑洞</p>
+  </div>
+  <section class="detail o-detail" data-scene="ideator" aria-hidden="true"></section>
+  <section class="detail o-detail" data-scene="faith" aria-hidden="true"></section>
+  <section class="detail o-detail" data-scene="blog" aria-hidden="true"></section>
+</div>
+
+<!-- the world's own cut to black, then the page beyond the horizon: both are filled at
+     runtime from the .ui .detail panels above (the single verified copy of every fact) -->
+<div id="blackout" aria-hidden="true"></div>
+<div id="iris" aria-hidden="true"></div>
+<div id="horizon" data-page="" tabindex="-1">
+  <div class="hz-light" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+  <article class="hz-page" id="hz-about" aria-label="关于"></article>
+  <article class="hz-page" id="hz-project" aria-label="项目"></article>
+</div>
+<!-- the debris layer: a marker's embers, their wake, and the line they comb into — one stroke,
+     drawn above the page so the line down the middle of a project is that same stroke -->
+<canvas id="trail" aria-hidden="true"></canvas>
 
 <div class="veil" id="veil"><span>3 N Y B</span></div>
 
@@ -382,52 +913,318 @@
   var backBtn = $("#back");
   var veil = $("#veil");
   var panels = {};
-  $$(".detail").forEach(function (p) { panels[p.dataset.scene] = p; });
+  $$(".ui > .detail").forEach(function (p) { panels[p.dataset.scene] = p; });   // the source panels only, not the 轨道 hosts that clone them
 
-  if (coarse) {
-    $("#hint").textContent = "触摸牵引奇点 · 长按加速局部时间";
-    $("#hint-mobile").hidden = false;
+  if (coarse) $("#hint-mobile").hidden = false;
+  var HINTS = {
+    gravity: coarse ? "点标记选中 · 再点坠入黑洞 · 点黑洞进入关于" : "点击标记选中 · 再点或拖入黑洞坠入 · 点击黑洞坠入 · 越靠近黑洞，局部时间流逝越快 · 滚轮可切换居中的项目",
+    orbit:   coarse ? "点行星靠近 · 点黑洞坠入 · 越近越扭曲" : "点击行星靠近 · 点击黑洞坠入 · 离得越近，时间越扭曲",
+    minimal: ""
+  };
+  function setHint() {
+    $("#hint").textContent = document.body.classList.contains("no-gl") ? "" : (reduced ? "已按系统设置减弱动效" : HINTS[skin]);
   }
-  if (reduced) {
-    $("#hint").textContent = "已按系统设置减弱动效";
+
+  // ---------------------------------------------------------------- skins
+  // Two skins share one set of facts: the 简约 skin's cards are populated by
+  // cloning the gravity skin's own .detail panels (the single verified copy of
+  // each scene's text and links), never a second hand-written copy.
+  var SKIN_KEY = "3nyb-skin";
+  // The skin registry — the one place a skin is described: its label, the immersive world that
+  // must be ticking while it is on screen (null for a plain document), how it puts the current
+  // scene on screen, and what DOM state of its own it must clear when it is switched away from
+  // (leave). Adding a skin is a row here plus its own markup/CSS; applySkin() and the frame loop
+  // below don't change. (world/orbitWorld are assigned later, hence getters.)
+  var SKINS = {
+    gravity: { name: "引力", world: function () { return world; },      render: function (o) { renderImmersive(world, o, '.card[data-scene="{id}"]'); }, leave: function () {} },
+    orbit:   { name: "轨道", world: function () { return orbitWorld; }, render: function (o) { renderOrbit(o); },                                     leave: function () { hideOrbitPanels(); } },
+    minimal: { name: "简约", world: function () { return null; },       render: function (o) { renderMinimal(o); },                                   leave: function () {} }
+  };
+  function writeSkin(v) { try { localStorage.setItem(SKIN_KEY, v); } catch (e) {} }
+  var skin = document.documentElement.getAttribute("data-skin");
+  if (!SKINS[skin]) skin = "gravity";
+  setHint();
+
+  var mSections = {};
+  Object.keys(panels).forEach(function (id) {
+    var host = $("#m-" + id);
+    if (host) { host.innerHTML = panels[id].innerHTML; mSections[id] = host; }
+  });
+  var mNavBtns = {};
+  $$(".m-links [data-scene]").forEach(function (b) { mNavBtns[b.dataset.scene] = b; });
+  // 轨道 reads from the very same panels too: its planet panels are cloned here (their hosts
+  // are empty in the markup on purpose), and the page beyond the horizon below is composed
+  // from the same panels at the moment it's entered — never a second hand-written copy.
+  var oSections = {};
+  $$("#orbit .o-detail").forEach(function (host) {
+    var id = host.dataset.scene;
+    if (panels[id]) { host.innerHTML = panels[id].innerHTML; oSections[id] = host; }
+  });
+  var oOverview = $("#o-overview");
+
+  // ---- the skin menu: a disclosure button opening a listbox; Escape here closes the
+  // menu only (the scene-level Escape lives on window and checks menuOpen first) ----
+  var menuEl = $("#skin-menu"), menuTrigger = $("#skin-trigger"), menuList = $("#skin-list"), menuLabel = $("#skin-trigger-v");
+  var menuOpts = $$(".skin-opt");
+  var menuOpen = false;
+  function syncMenu() {
+    menuLabel.textContent = SKINS[skin].name;
+    menuOpts.forEach(function (o) { o.setAttribute("aria-selected", o.dataset.skinOpt === skin ? "true" : "false"); });
+  }
+  function focusOpt(i) {
+    i = (i + menuOpts.length) % menuOpts.length;
+    try { menuOpts[i].focus({ preventScroll: true }); } catch (e) {}
+  }
+  function openMenu(focusIdx) {
+    if (menuOpen) return;
+    menuOpen = true;
+    menuList.hidden = false;
+    menuTrigger.setAttribute("aria-expanded", "true");
+    var idx = focusIdx == null ? menuOpts.map(function (o) { return o.dataset.skinOpt; }).indexOf(skin) : focusIdx;
+    focusOpt(idx < 0 ? 0 : idx);
+  }
+  function closeMenu(refocus) {
+    if (!menuOpen) return;
+    menuOpen = false;
+    menuList.hidden = true;
+    menuTrigger.setAttribute("aria-expanded", "false");
+    if (refocus) { try { menuTrigger.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  menuTrigger.addEventListener("click", function () { if (menuOpen) closeMenu(true); else openMenu(); });
+  menuTrigger.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); openMenu(e.key === "ArrowUp" ? menuOpts.length - 1 : 0); }
+  });
+  menuList.addEventListener("keydown", function (e) {
+    var i = menuOpts.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); focusOpt(i + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); focusOpt(i - 1); }
+    else if (e.key === "Home") { e.preventDefault(); focusOpt(0); }
+    else if (e.key === "End") { e.preventDefault(); focusOpt(menuOpts.length - 1); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeMenu(true); }
+  });
+  menuOpts.forEach(function (o) {
+    o.addEventListener("click", function () { if (o.disabled) return; applySkin(o.dataset.skinOpt); closeMenu(true); });
+  });
+  // never a stuck-open menu: outside pointer, focus leaving, or the window blurring all close it
+  document.addEventListener("pointerdown", function (e) { if (menuOpen && !menuEl.contains(e.target)) closeMenu(false); }, true);
+  menuEl.addEventListener("focusout", function (e) { if (menuOpen && !menuEl.contains(e.relatedTarget)) closeMenu(false); });
+  window.addEventListener("blur", function () { closeMenu(false); });
+  syncMenu();
+
+  // applySkin(): the one way a skin changes. Order matters: cancel whatever the outgoing skin had
+  // in flight, stamp the new skin, hand the frame loop to the new skin's world (deactivating the
+  // old one), then put the current scene on the new skin instantly.
+  function applySkin(next) {
+    if (!SKINS[next]) next = "gravity";
+    if (next === "orbit" && !orbitWorld) next = "gravity";
+    if (skin === next) return;
+    cancelTransitions();
+    SKINS[skin].leave();
+    skin = next;
+    document.documentElement.setAttribute("data-skin", skin);
+    writeSkin(skin);
+    syncMenu();
+    setHint();
+    Loop.set(SKINS[skin].world());
+    renderCurrent({ instant: true, skinSwitch: true });
   }
 
   // ---------------------------------------------------------------- navigation
-  var current = null;          // scene id or null (overview)
-  var revealTimer = 0;
+  var current = null;          // scene id or null (overview / top of page)
+  var revealTimer = 0;         // the one pending "compose the panel/page in" timer, whichever skin set it
   var world = null;            // set below if WebGL is available
+  var orbitWorld = null;       // the 轨道 skin's world; shares the renderer with the gravity one
+
+  // cancelTransitions(): the single path every skin switch and every scene change goes through
+  // before starting anything new. It invalidates any pending "the crossing is complete" callback
+  // (hzToken), drops the pending reveal timer, and resets the shared cursor's visual state. The
+  // live world drops its own in-flight input (drags, captures, momentum) in deactivate().
+  function cancelTransitions() {
+    hzToken++;
+    clearTimeout(revealTimer); revealTimer = 0;
+    cursorReset();
+    var a = Loop.active();
+    if (a && a.cancel) a.cancel();   // the live world's own pending turn / idle showcase
+  }
+  function renderCurrent(opts) { SKINS[skin].render(opts); }
+
+  // 轨道: a planet is followed, not fallen into — the camera glides alongside it and its panel
+  // composes in once settled; only the hole itself goes beyond the horizon.
+  function hideOrbitPanels() {
+    Object.keys(oSections).forEach(function (k) { oSections[k].classList.remove("on"); oSections[k].setAttribute("aria-hidden", "true"); });
+  }
+  function renderOrbit(opts) {
+    var id = current;
+    hideOrbitPanels();
+    if (id === "about") { renderImmersive(orbitWorld, opts, '.o-nav [data-scene="{id}"]'); return; }
+    document.body.classList.toggle("in-detail", !!id);
+    oOverview.classList.toggle("off", !!id);
+    backBtn.classList.toggle("on", !!id);
+    hideHorizon(!!opts.instant);
+    if (orbitWorld) orbitWorld.rest(false);
+    var dur = orbitWorld ? orbitWorld.flyTo(id, !!opts.instant) : 0;
+    if (id && oSections[id]) {
+      var reveal = function () {
+        if (current !== id || skin !== "orbit") return;   // superseded meanwhile: nothing to compose in
+        oSections[id].classList.add("on");
+        oSections[id].setAttribute("aria-hidden", "false");
+        oSections[id].scrollTop = 0;
+        if (!opts.instant) { try { $("h2", oSections[id]).focus({ preventScroll: true }); } catch (e) {} }
+      };
+      // the panel fades in as the camera settles beside the planet, so text never lands mid-motion
+      revealTimer = setTimeout(reveal, dur > 0 ? dur * 720 : 0);
+    } else if (opts.returnFocus) {
+      var btn = $('.o-nav [data-scene="' + opts.returnFocus + '"]');
+      if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
+    }
+  }
+
+  // ---------------------------------------------------------------- beyond the horizon
+  // The reading surface both immersive skins land on. About is one long column; a project
+  // is split down the middle by a luminous line — framing on the left, the text on the right.
+  // Everything on it is cloned from the .ui .detail panels at the moment it's shown.
+  var horizonEl = $("#horizon"), blackoutEl = $("#blackout");
+  var hzHosts = { about: $("#hz-about"), project: $("#hz-project") };
+  var hzObserver = null, hzToken = 0, hzInstantTimer = 0;
+  var FOOT_TEXT = $(".m-foot").textContent;
+  function el(tag, cls) { var n = document.createElement(tag); if (cls) n.className = cls; return n; }
+  function buildHorizon(id) {
+    var isAbout = id === "about";
+    hzHosts.about.innerHTML = ""; hzHosts.project.innerHTML = "";
+    horizonEl.setAttribute("data-page", isAbout ? "about" : "project");
+    var wrap = el("div", "hz-wrap"), n = 0;
+    function put(parent, node) { node.classList.add("hz-reveal"); node.style.setProperty("--i", n++); parent.appendChild(node); return node; }
+    var kids = Array.prototype.slice.call(panels[id].children).map(function (k) {
+      var c = k.cloneNode(true);
+      if (c.classList.contains("kicker")) c.classList.add("hz-kicker");
+      return c;
+    });
+    if (isAbout) {
+      kids.forEach(function (c) { put(wrap, c); if (c.classList.contains("sub")) put(wrap, el("div", "hz-rule")); });
+    } else {
+      var split = el("div", "hz-split"), left = el("aside", "hz-left"), right = el("div", "hz-right");
+      var glyph = $('.card[data-scene="' + id + '"] .glyph');       // the project's own mark, from its overview card
+      if (glyph) { var g = el("div", "hz-glyph"); g.innerHTML = glyph.innerHTML; g.setAttribute("aria-hidden", "true"); put(left, g); }
+      kids.forEach(function (c) {
+        var toLeft = c.classList.contains("kicker") || c.tagName === "H2" || c.classList.contains("sub");
+        put(toLeft ? left : right, c);
+      });
+      split.appendChild(left);
+      // the line down the middle: when the debris layer draws it (WebGL), this element is only the
+      // slot the canvas line docks onto, measured with getBoundingClientRect() — so it must never
+      // carry the staggered reveal transform (scaleY(0) -> 1 over 2.2 s), which would report a
+      // zero-height box at the crossing and make the docked line collapse and regrow with it.
+      // Without WebGL the element IS the visible line, and reveals like every other block.
+      var line = el("div", "hz-line");
+      if (document.body.classList.contains("no-gl")) put(split, line); else split.appendChild(line);
+      split.appendChild(right);
+      wrap.appendChild(split);
+    }
+    var foot = el("footer", "hz-foot");
+    var ft = el("span"); ft.textContent = FOOT_TEXT; foot.appendChild(ft);
+    var ret = el("button", "hz-return"); ret.type = "button"; ret.textContent = "← 返回 · " + SKINS[skin].name;
+    ret.addEventListener("click", leave);
+    foot.appendChild(ret);
+    put(wrap, foot);
+    (isAbout ? hzHosts.about : hzHosts.project).appendChild(wrap);
+    return wrap;
+  }
+  function hzInstant() {
+    horizonEl.classList.add("hz-instant");
+    clearTimeout(hzInstantTimer);
+    hzInstantTimer = setTimeout(function () { horizonEl.classList.remove("hz-instant"); }, 80);
+  }
+  function showHorizon(id, instant) {
+    var wrap = buildHorizon(id);
+    if (hzObserver) { hzObserver.disconnect(); hzObserver = null; }
+    var items = $$(".hz-reveal", wrap);
+    horizonEl.scrollTop = 0;
+    horizonEl.style.setProperty("--hz-y", "0px");
+    if (instant) hzInstant();
+    document.body.classList.add("horizon-on");
+    if (reduced || instant || !("IntersectionObserver" in window)) {
+      items.forEach(function (i) { i.classList.add("in"); });
+    } else {
+      hzObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); if (hzObserver) hzObserver.unobserve(e.target); } });
+      }, { root: horizonEl, threshold: 0.05, rootMargin: "0px 0px -8% 0px" });
+      items.forEach(function (i) { hzObserver.observe(i); });
+    }
+    var h2 = $("h2", wrap);
+    if (h2 && !instant) { try { h2.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function hideHorizon(instant) {
+    hzToken++;
+    if (hzObserver) { hzObserver.disconnect(); hzObserver = null; }
+    if (instant) hzInstant();
+    document.body.classList.remove("horizon-on");
+  }
+  // the reveal follows the visitor's own scrolling — read only, never driven
+  horizonEl.addEventListener("scroll", function () {
+    if (!reduced) horizonEl.style.setProperty("--hz-y", horizonEl.scrollTop + "px");
+  }, { passive: true });
+
+  function renderImmersive(w, opts, focusSel) {
+    var id = current;
+    document.body.classList.toggle("in-detail", !!id);
+    overviewEl.classList.toggle("off", !!id);
+    oOverview.classList.toggle("off", !!id);
+    backBtn.classList.toggle("on", !!id);
+    if (id) {
+      var instant = !!opts.instant || reduced;
+      if (document.body.classList.contains("horizon-on")) {
+        // already through (a skin switch, or a hash change while reading): just swap the page
+        showHorizon(id, true);
+        if (w) { w.flyTo(id, true); w.rest(true); }
+        return;
+      }
+      var token = ++hzToken;
+      var done = function () {
+        if (token !== hzToken || current !== id) return;
+        clearTimeout(revealTimer);
+        showHorizon(id, instant);
+        if (w) w.rest(true);              // the page is opaque: the world stops rendering behind it
+      };
+      var dur = w ? w.flyTo(id, instant, done) : 0;
+      // the world calls back at the crossing; the timer only covers a stalled frame loop
+      if (dur === 0) done(); else revealTimer = setTimeout(done, dur * 1000 + 900);
+    } else {
+      hideHorizon(!!opts.instant);
+      if (w) { w.rest(false); w.flyTo(null, !!opts.instant); }
+      if (opts.returnFocus) {
+        var btn = $(focusSel.replace("{id}", opts.returnFocus));
+        if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
+      }
+    }
+  }
+
+  function renderMinimal(opts) {
+    var id = current;
+    hideHorizon(true);
+    document.body.classList.remove("in-detail");
+    Object.keys(mNavBtns).forEach(function (k) { mNavBtns[k].removeAttribute("aria-current"); });
+    if (!id) {
+      window.scrollTo({ top: 0, left: 0, behavior: opts.instant || reduced ? "auto" : "smooth" });
+      if (opts.returnFocus && mNavBtns[opts.returnFocus]) {
+        try { mNavBtns[opts.returnFocus].focus({ preventScroll: true }); } catch (e) {}
+      }
+      return;
+    }
+    if (mNavBtns[id]) mNavBtns[id].setAttribute("aria-current", "page");
+    var target = mSections[id];
+    if (!target) return;
+    target.scrollIntoView({ behavior: opts.instant || reduced ? "auto" : "smooth", block: "start" });
+    if (!opts.instant) { try { $("h2", target).focus({ preventScroll: true }); } catch (e) {} }
+  }
 
   function showScene(id, opts) {
     opts = opts || {};
     if (id && !SCENES[id]) id = null;
     if (current === id && !opts.force) return;
     current = id;
-    clearTimeout(revealTimer);
-
-    document.body.classList.toggle("in-detail", !!id);
-    overviewEl.classList.toggle("off", !!id);
-    backBtn.classList.toggle("on", !!id);
-    Object.keys(panels).forEach(function (k) {
-      panels[k].classList.remove("on");
-      panels[k].setAttribute("aria-hidden", "true");
-    });
+    cancelTransitions();
     document.title = id ? SCENES[id].title + " · 3nyb" : BASE_TITLE;
-
-    var dur = world ? world.flyTo(id, !!opts.instant) : 0;
-
-    if (id) {
-      var reveal = function () {
-        panels[id].classList.add("on");
-        panels[id].setAttribute("aria-hidden", "false");
-        panels[id].scrollTop = 0;
-        if (!opts.instant) { try { $("h2", panels[id]).focus({ preventScroll: true }); } catch (e) {} }
-      };
-      // The panel fades in as the camera settles, so text never appears while still moving.
-      revealTimer = setTimeout(reveal, dur > 0 ? dur * 720 : 0);
-    } else if (opts.returnFocus) {
-      var card = $('.card[data-scene="' + opts.returnFocus + '"]');
-      if (card) { try { card.focus({ preventScroll: true }); } catch (e) {} }
-    }
+    renderCurrent(opts);
   }
 
   function enter(id) {
@@ -461,121 +1258,164 @@
 
   $$("[data-scene]").forEach(function (el) {
     if (el.classList.contains("detail")) return;
-    el.addEventListener("click", function () { enter(el.dataset.scene); });
-    el.addEventListener("pointerenter", function () { if (world) world.setHot(el.dataset.scene, true); });
-    el.addEventListener("pointerleave", function () { if (world) world.setHot(el.dataset.scene, false); });
-    el.addEventListener("focus", function () { if (world) world.setHot(el.dataset.scene, true); });
-    el.addEventListener("blur", function () { if (world) world.setHot(el.dataset.scene, false); });
+    // placeholder ("coming soon") tags are not real scenes: never navigate, just acknowledge
+    var isTag = el.classList.contains("tag");
+    if (el.classList.contains("tag-soon")) {
+      el.addEventListener("click", function () {
+        if (!world) return;
+        if (skin === "gravity" && world.tapStation(el.dataset.scene)) return;
+        world.ackPlaceholder(el.dataset.scene);
+      });
+    } else {
+      el.addEventListener("click", function () {
+        if (isTag && skin === "gravity" && world && world.tapStation(el.dataset.scene)) return;   // a label click on another station: select it
+        enter(el.dataset.scene);
+      });
+    }
+    var hot = function (on) { return function () {
+      if (world) world.setHot(el.dataset.scene, on);
+      if (orbitWorld) orbitWorld.setHot(el.dataset.scene, on);
+    }; };
+    el.addEventListener("pointerenter", hot(true));
+    el.addEventListener("pointerleave", hot(false));
+    el.addEventListener("focus", hot(true));
+    el.addEventListener("blur", hot(false));
   });
   backBtn.addEventListener("click", leave);
   window.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && current) { e.preventDefault(); leave(); }
+    if (e.key !== "Escape") return;
+    // Two Escape contexts that must not fight: an open skin menu always wins and only
+    // closes itself; backing out of a scene needs a further Escape with the menu closed.
+    if (menuOpen) { e.preventDefault(); closeMenu(true); return; }
+    if (current) { e.preventDefault(); leave(); }
   });
 
-  // ---------------------------------------------------------------- 3D world
-  function createWorld() {
+  function isUI(target) {
+    return !!(target && target.closest && target.closest("#horizon, .detail, .card, .back, .tag, .cards, .skin-menu, .o-nav, .o-warp, a, button, input, label"));
+  }
+
+  // ---------------------------------------------------------------- shared pointer state
+  // One mouse tracker feeds both the gravity skin's proximity effect and the custom cursor
+  // below, so neither has to run its own duplicate listeners.
+  var mouse = { x: -9999, y: -9999, active: false, overUI: false };
+  var canvasPick = null;   // set by whichever immersive world is currently running (its own pick())
+  function isInteractiveEl(t) {
+    return !!(t && t.closest && t.closest('button, a, [role="option"], .card, .tag, .o-nav li, label'));
+  }
+  function isTextFieldEl(t) {
+    return !!(t && t.closest && t.closest('input:not([type="range"]), textarea, [contenteditable="true"]'));
+  }
+  window.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch") mouse.overUI = isUI(e.target);
+  }, true);
+  document.addEventListener("mouseout", function (e) { if (!e.relatedTarget) { mouse.active = false; cursorAway(); } });
+  window.addEventListener("blur", function () { mouse.active = false; cursorAway(); });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) { mouse.active = false; cursorAway(); } });
+
+  // ---------------------------------------------------------------- custom cursor
+  // A small bright core (zero-lag, positioned directly from the raw pointer event) plus a
+  // restrained trailing ring. States: default, hover (an interactive element), drag, and — in
+  // 引力 only — a "drawing in" tightening as the pointer nears the black hole's core, driven by
+  // the same proximity value the gravity skin uses for its local-time effect.
+  var CURSOR_ON = !coarse;
+  var cursorEl = null, cursorRing = null, cursorCore = null;
+  var ringX = 0, ringY = 0, cursorLive = false, cursorSeen = false;
+  if (CURSOR_ON) {
+    cursorEl = document.createElement("div");
+    cursorEl.id = "cursor"; cursorEl.setAttribute("aria-hidden", "true"); cursorEl.hidden = true;
+    cursorEl.innerHTML = '<i class="cur-ring"></i><i class="cur-core"></i>';
+    document.body.appendChild(cursorEl);
+    cursorRing = cursorEl.querySelector(".cur-ring");
+    cursorCore = cursorEl.querySelector(".cur-core");
+    document.documentElement.classList.add("has-cursor");
+  }
+  function cursorAway() { if (cursorEl) cursorEl.hidden = true; cursorSeen = false; }
+  function startCursorLoop() {
+    if (cursorLive) return;
+    cursorLive = true;
+    function loop() {
+      if (document.hidden || !cursorSeen) { cursorLive = false; return; }
+      var dx = mouse.x - ringX, dy = mouse.y - ringY;
+      if (reduced) { ringX = mouse.x; ringY = mouse.y; } else { ringX += dx * 0.35; ringY += dy * 0.35; }
+      cursorRing.style.transform = "translate3d(" + ringX.toFixed(1) + "px," + ringY.toFixed(1) + "px,0) translate(-50%,-50%)";
+      if (!reduced && (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05)) requestAnimationFrame(loop);
+      else cursorLive = false;
+    }
+    requestAnimationFrame(loop);
+  }
+  function setCursorNear(t) { if (cursorEl) cursorEl.style.setProperty("--near", (t || 0).toFixed(3)); }
+  function setCursorDrag(v) { if (cursorEl) cursorEl.classList.toggle("drag", !!v); }
+  // back to the plain state; the next pointermove recomputes hover from what is actually under it
+  function cursorReset() { if (!cursorEl) return; cursorEl.classList.remove("hover", "drag"); cursorEl.style.setProperty("--near", "0"); }
+  if (CURSOR_ON) {
+    window.addEventListener("pointermove", function (e) {
+      if (e.pointerType === "touch") return;
+      mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true; mouse.overUI = isUI(e.target);
+      var text = isTextFieldEl(e.target);
+      cursorEl.classList.toggle("text", text);
+      var hoverUI = !text && isInteractiveEl(e.target);
+      var hoverCanvas = !text && !hoverUI && !current && canvasPick && !isUI(e.target) && !!canvasPick(e.clientX, e.clientY);
+      cursorEl.classList.toggle("hover", hoverUI || hoverCanvas);
+      cursorEl.hidden = false;
+      if (!cursorSeen) { cursorSeen = true; ringX = e.clientX; ringY = e.clientY; cursorRing.style.transform = "translate3d(" + ringX + "px," + ringY + "px,0) translate(-50%,-50%)"; }
+      cursorCore.style.transform = "translate3d(" + e.clientX + "px," + e.clientY + "px,0) translate(-50%,-50%)";
+      startCursorLoop();
+    }, { passive: true });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden && cursorSeen) startCursorLoop(); });
+  } else {
+    setCursorNear = function () {}; setCursorDrag = function () {};
+  }
+
+  // ---------------------------------------------------------------- 3D worlds
+  // One renderer on the one canvas; the gravity and orbit skins each own a scene + camera
+  // + frame loop and only ever run one at a time.
+  // ---- the page's one frame loop. Exactly one immersive world ticks at a time — the one the
+  // current skin names in SKINS — and Loop.set() is the only way that changes: it cancels the
+  // pending frame, deactivates the outgoing world (which releases its drags, pointer captures
+  // and overlays), activates the incoming one and schedules the next frame. No world ever
+  // schedules itself, so two loops cannot run at once whatever order skins are switched in. ----
+  var Loop = (function () {
+    var active = null, raf = 0, last = 0;
+    function tick(now) {
+      raf = 0;
+      if (!active) return;
+      var dt = Math.min(Math.max(0, now - last) / 1000, 0.05); last = now;
+      active.tick(dt);
+      if (active && !raf) raf = requestAnimationFrame(tick);
+    }
+    return {
+      set: function (w) {          // w: the world that should be ticking from now on, or null
+        if (active === w) return;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        if (active) active.deactivate();
+        active = w;
+        if (w) { w.activate(); last = performance.now(); raf = requestAnimationFrame(tick); }
+      },
+      active: function () { return active; }
+    };
+  })();
+
+  function makeRenderer() {
     if (typeof THREE === "undefined") return null;
-    var canvas = $("#scene");
     var renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({ canvas: $("#scene"), antialias: true, alpha: false, powerPreference: "high-performance" });
     } catch (e) { return null; }
-
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    renderer.setPixelRatio(dpr);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x04060b, 1);
+    return renderer;
+  }
 
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 500);
-    var BASE_FOV = 46;
-
-    // ---- stars: cold, sparse, far ----
-    (function () {
-      var n = coarse ? 1600 : 3000;
-      var pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
-      var a = new THREE.Color(0x8fb8ee), b = new THREE.Color(0xf4f9ff), c = new THREE.Color();
-      for (var i = 0; i < n; i++) {
-        var r = 170 + Math.random() * 90;
-        var th = Math.random() * Math.PI * 2;
-        var ph = Math.acos(1 - Math.random() * 1.25);           // mostly the upper sky
-        pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
-        pos[i * 3 + 1] = r * Math.cos(ph) - 20;
-        pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
-        c.copy(a).lerp(b, Math.pow(Math.random(), 0.6));
-        var k = 0.45 + Math.random() * 0.55;
-        col[i * 3] = c.r * k; col[i * 3 + 1] = c.g * k; col[i * 3 + 2] = c.b * k;
-      }
-      var g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      g.setAttribute("color", new THREE.BufferAttribute(col, 3));
-      var m = new THREE.PointsMaterial({ size: 1.35, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false, sizeAttenuation: true });
-      scene.add(new THREE.Points(g, m));
-    })();
-
-    // ---- the field: a wire lattice bent by the singularity, fading to nothing before any edge ----
-    // A true square lattice built from line segments (a wireframe plane would show triangle
-    // diagonals). Each line is subdivided so the vertex shader can bend it into the well.
-    var GRID_HALF = 70, GRID_N = coarse ? 90 : 140;
-    var gridGeo = (function () {
-      var step = GRID_HALF * 2 / GRID_N, v = new Float32Array((GRID_N + 1) * GRID_N * 12), k = 0;
-      for (var i = 0; i <= GRID_N; i++) {
-        var c = -GRID_HALF + i * step;
-        for (var j = 0; j < GRID_N; j++) {
-          var a = -GRID_HALF + j * step, b = a + step;
-          v[k++] = a; v[k++] = 0; v[k++] = c;  v[k++] = b; v[k++] = 0; v[k++] = c;   // along x
-          v[k++] = c; v[k++] = 0; v[k++] = a;  v[k++] = c; v[k++] = 0; v[k++] = b;   // along z
-        }
-      }
-      var g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.BufferAttribute(v, 3));
-      return g;
-    })();
-    var gridU = {
-      uHole: { value: new THREE.Vector3(0, 0, -1.5) },
-      uStrength: { value: 3.0 },
-      uRipple: { value: 0 },
-      uRippleAmp: { value: 0 },
-      uFade: { value: new THREE.Vector2(28, 56) },
-      uCamPos: { value: camera.position },
-      uBoost: { value: 0 }
-    };
-    var gridMat = new THREE.ShaderMaterial({
-      uniforms: gridU,
-      transparent: true, depthWrite: false,
-      vertexShader: [
-        "uniform vec3 uHole; uniform float uStrength; uniform float uRipple; uniform float uRippleAmp;",
-        "uniform vec2 uFade; uniform vec3 uCamPos; uniform float uBoost;",
-        "varying vec3 vColor; varying float vAlpha;",
-        "void main(){",
-        "  vec3 p = position;",
-        "  vec2 d2 = p.xz - uHole.xz;",
-        "  float d = length(d2);",
-        "  float well = -uStrength / (1.0 + d*d*0.10) - uStrength*0.18 / (1.0 + d*0.45);",
-        "  float ripple = sin(d*1.35 - uRipple) * uRippleAmp * exp(-d*0.16) * smoothstep(0.0, 2.0, d);",
-        "  float pull = 0.42 / (1.0 + d*d*0.22);",          // lensing: the lattice is drawn in toward the singularity
-        "  p.xz -= d2 * pull;",
-        "  p.y += well + ripple;",
-        "  float near = 1.0 / (1.0 + d*d*0.06);",
-        "  vec3 cold = vec3(0.15, 0.34, 0.68);",
-        "  vec3 ice  = vec3(0.82, 0.93, 1.0);",
-        "  vColor = mix(cold, ice, near * (0.7 + 0.3*uBoost));",
-        "  float ringFade = 1.0 - smoothstep(uFade.x, uFade.y, length(p.xz));",  // no edge, ever
-        "  float eat = smoothstep(0.30, 1.4, d);",                              // dissolves into the horizon
-        "  float camD = distance(p, uCamPos);",
-        "  float fog = exp(-camD * 0.021) * smoothstep(3.0, 11.0, camD);",   // also thins right under the camera
-        "  vAlpha = ringFade * eat * fog * (0.30 + 0.45*near);",
-        "  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);",
-        "}"].join("\n"),
-      fragmentShader: [
-        "varying vec3 vColor; varying float vAlpha;",
-        "void main(){ gl_FragColor = vec4(vColor, vAlpha); }"].join("\n")
-    });
-    var grid = new THREE.LineSegments(gridGeo, gridMat);
-    grid.frustumCulled = false;
-    scene.add(grid);
-
-    // ---- the singularity: horizon, photon ring, tilted accretion disk with a lensed far side ----
-    var HOLE_R = 2.1;
+  // ---- the singularity, shared by both immersive skins: horizon, photon ring, tilted
+  // accretion disk with a lensed far side, and the orbiting matter trails ----
+  function buildSingularity(scene, camera, dpr, holeR, visualScale) {
+    var HOLE_R = holeR || 2.1;          // matter/disk placement scale — kept modest so the
+                                         // accretion particles stay close and don't force planet
+                                         // orbits outward; gravity always uses the default.
+    var VIS_R = HOLE_R * (visualScale || 1);  // the actual rendered plane size — visual only.
+                                         // Decoupled from HOLE_R so orbit can render a much
+                                         // bigger-looking horizon without dragging the whole
+                                         // matter/orbit system out with it.
     var DISK_TILT = 0.34;                       // shared by the disk shader and the orbiting matter
     var holeU = { uPhase: { value: 0 }, uBoost: { value: 0 } };
     var holeMat = new THREE.ShaderMaterial({
@@ -620,11 +1460,30 @@
         "}"].join("\n")
     });
     var hole = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), holeMat);
-    hole.scale.setScalar(HOLE_R);
+    hole.scale.setScalar(VIS_R);
     hole.renderOrder = 10;
     hole.frustumCulled = false;
-    hole.position.set(0, 0, -1.5);
     scene.add(hole);
+
+    // The disk shader masks its own far side correctly, but the matter trails below are
+    // drawn *after* it with no depth test, so anything of theirs inside the horizon used to
+    // shine straight through the dark disk. Two-part fix: (1) far-side matter that would sit
+    // inside the horizon is lifted radially onto a thin arc hugging the horizon's rim (the
+    // lensed image), and (2) an opaque cap with the shader's exact horizon profile is drawn
+    // last, so nothing — trails, heads, chords between lensed points — can ever cross it,
+    // at any disk phase or camera angle.
+    var capMat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, depthTest: false,
+      vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: [
+        "precision highp float; varying vec2 vUv;",
+        "void main(){ float r = length((vUv - 0.5) * 2.0); float h = 1.0 - smoothstep(0.262, 0.278, r);",
+        "  if (h <= 0.0) discard; gl_FragColor = vec4(0.0, 0.0, 0.0, h); }"].join("\n")
+    });
+    var cap = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), capMat);
+    cap.renderOrder = 13;
+    cap.frustumCulled = false;
+    hole.add(cap);
 
     // ---- orbiting matter: light trails that speed up and stretch under local time ----
     var PN = coarse ? 300 : 480;
@@ -658,12 +1517,13 @@
 
     var _right = new THREE.Vector3(), _up = new THREE.Vector3(), _fwd = new THREE.Vector3();
     var COLD = [0.30, 0.55, 0.95], ICE = [0.88, 0.95, 1.0];
+    var horizonR = 0.278 * VIS_R;                // matches the ACTUAL rendered horizon (VIS_R, not HOLE_R)
+    var lensR = horizonR * 1.02;                 // where far-side matter surfaces again, just outside the rim
     function updateMatter(localDt, ts, boost) {
       _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
       _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
       _fwd.set(0, 0, 1).applyQuaternion(camera.quaternion);   // toward the camera
       var hx = hole.position.x, hy = hole.position.y, hz = hole.position.z;
-      var horizonR = 0.278 * HOLE_R;
       for (var i = 0; i < PN; i++) {
         var a = (pAng[i] += pOmg[i] * localDt);
         var span = Math.min(pOmg[i] * ts * 0.06, 1.0) + 0.01;     // the trail is the last slice of local time
@@ -672,11 +1532,20 @@
         var x = rr * ca, y = rr * DISK_TILT * sa, z = -rr * 0.62 * sa;
         var a2 = a - span, sa2 = Math.sin(a2), ca2 = Math.cos(a2);
         var x2 = rr * ca2, y2 = rr * DISK_TILT * sa2, z2 = -rr * 0.62 * sa2;
-        var hidden = (sa > 0 && Math.sqrt(x * x + y * y) < horizonR);
+        var lens = 0;
+        if (sa > 0) {                                              // far side: behind the horizon...
+          var r1 = Math.sqrt(x * x + y * y);
+          if (r1 < lensR) { var k1 = (lensR + (lensR - r1) * 0.12) / r1; x *= k1; y *= k1; z = 0; lens = 1; }
+        }
+        if (sa2 > 0) {
+          var r2 = Math.sqrt(x2 * x2 + y2 * y2);
+          if (r2 < lensR) { var k2 = (lensR + (lensR - r2) * 0.12) / r2; x2 *= k2; y2 *= k2; z2 = 0; }
+        }
         var approach = -ca;                                        // left side moves toward the viewer
-        var bright = hidden ? 0 : (0.13 + 0.22 * (1 - (pRad[i] - RAD_MIN) / RAD_SPAN)) * (1 + (0.5 + 0.6 * boost) * approach) * (0.7 + 0.3 * pSeed[i]);
+        var bright = (0.13 + 0.22 * (1 - (pRad[i] - RAD_MIN) / RAD_SPAN)) * (1 + (0.5 + 0.6 * boost) * approach) * (0.7 + 0.3 * pSeed[i]);
+        if (lens) bright *= 0.55;                                  // ...seen faint and bent over the rim
         bright *= (1 + 1.1 * boost);
-        var t = Math.min(1, Math.max(0, 0.2 + 0.45 * approach * (0.5 + 0.5 * boost) + 0.35 * boost));
+        var t = Math.min(1, Math.max(0, 0.2 + 0.45 * approach * (0.5 + 0.5 * boost) + 0.35 * boost + 0.3 * lens));
         var cr = (COLD[0] + (ICE[0] - COLD[0]) * t) * bright;
         var cg = (COLD[1] + (ICE[1] - COLD[1]) * t) * bright;
         var cb = (COLD[2] + (ICE[2] - COLD[2]) * t) * bright;
@@ -699,33 +1568,721 @@
       headGeo.attributes.color.needsUpdate = true;
     }
 
-    // ---- station markers: one small, distinct object per scene ----
-    var iceMat = function (opacity) {
-      return new THREE.MeshBasicMaterial({ color: 0xd9ecff, transparent: true, opacity: opacity, depthWrite: false });
+    return { hole: hole, holeU: holeU, HOLE_R: HOLE_R, VIS_R: VIS_R, update: updateMatter };
+  }
+
+  // ---------------------------------------------------------------- shared pieces
+  function iceMat(o) { return new THREE.MeshBasicMaterial({ color: 0xd9ecff, transparent: true, opacity: o, depthWrite: false }); }
+  function lineMat(o) { return new THREE.LineBasicMaterial({ color: 0xbfe3ff, transparent: true, opacity: o, depthWrite: false }); }
+  function approach(cur, target, tau, dt) { return cur + (target - cur) * (1 - Math.exp(-dt / tau)); }
+  function ease(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function smooth(a, b, x) { var t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+  function isNarrow() { return window.innerWidth / window.innerHeight < 1.0 || window.innerWidth <= 760; }
+
+  // ---- stars: points plus a streak per star whose far end slides toward the hole on screen.
+  // uWarp is the ambient nearness cue (轨道's distance slider, gravity's held local time). ----
+  function buildStars(scene, n, sample, size) {
+    var sPos = new Float32Array(n * 3), sCol = new Float32Array(n * 3);
+    var kPos = new Float32Array(n * 6), kCol = new Float32Array(n * 6), kEnd = new Float32Array(n * 2), kSeed = new Float32Array(n * 2);
+    var a = new THREE.Color(0x8fb8ee), b = new THREE.Color(0xf4f9ff), c = new THREE.Color(), q = [0, 0, 0];
+    for (var i = 0; i < n; i++) {
+      sample(q);
+      c.copy(a).lerp(b, Math.pow(Math.random(), 0.6));
+      var k = 0.4 + Math.random() * 0.6, seed = Math.random();
+      sPos[i * 3] = q[0]; sPos[i * 3 + 1] = q[1]; sPos[i * 3 + 2] = q[2];
+      sCol[i * 3] = c.r * k; sCol[i * 3 + 1] = c.g * k; sCol[i * 3 + 2] = c.b * k;
+      for (var e = 0; e < 2; e++) {
+        var o = i * 6 + e * 3;
+        kPos[o] = q[0]; kPos[o + 1] = q[1]; kPos[o + 2] = q[2];
+        kCol[o] = c.r * k; kCol[o + 1] = c.g * k; kCol[o + 2] = c.b * k;
+        kEnd[i * 2 + e] = e; kSeed[i * 2 + e] = seed;
+      }
+    }
+    var sg = new THREE.BufferGeometry();
+    sg.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
+    sg.setAttribute("color", new THREE.BufferAttribute(sCol, 3));
+    scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ size: size, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false, sizeAttenuation: true })));
+    var streakU = { uHole: { value: new THREE.Vector2(0, 0) }, uWarp: { value: 0 } };
+    var kg = new THREE.BufferGeometry();
+    kg.setAttribute("position", new THREE.BufferAttribute(kPos, 3));
+    kg.setAttribute("color", new THREE.BufferAttribute(kCol, 3));
+    kg.setAttribute("aEnd", new THREE.BufferAttribute(kEnd, 1));
+    kg.setAttribute("aSeed", new THREE.BufferAttribute(kSeed, 1));
+    var streaks = new THREE.LineSegments(kg, new THREE.ShaderMaterial({
+      uniforms: streakU, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+      vertexShader: [
+        "attribute float aEnd; attribute float aSeed; attribute vec3 color;",
+        "uniform vec2 uHole; uniform float uWarp;",
+        "varying vec3 vC; varying float vA;",
+        "void main(){",
+        "  vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);",
+        "  float w = uWarp * uWarp;",
+        "  if (clip.w > 0.0 && aEnd > 0.5) {",                    // the tail end slides toward the hole on screen
+        "    vec2 ndc = clip.xy / clip.w;",
+        "    vec2 d = uHole - ndc;",
+        "    ndc += d * min(w * (0.06 + 0.34 * aSeed), 0.9);",
+        "    clip.xy = ndc * clip.w;",
+        "  }",
+        "  vC = color; vA = (1.0 - aEnd) * min(w * 1.6, 1.0) * 0.85;",
+        "  gl_Position = clip;",
+        "}"].join("\n"),
+      fragmentShader: "precision highp float; varying vec3 vC; varying float vA; void main(){ gl_FragColor = vec4(vC * vA, vA); }"
+    }));
+    streaks.frustumCulled = false;
+    scene.add(streaks);
+    return { streakU: streakU };
+  }
+
+  // ---- planets: one shader, three very different bodies, shared by both immersive skins ----
+  var PLANET_VS = [
+    "varying vec3 vN; varying vec3 vW; varying vec3 vL;",
+    "void main(){ vL = normalize(position); vN = normalize(mat3(modelMatrix) * normal);",
+    "  vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }"].join("\n");
+  var PLANET_FS = [
+    "precision highp float;",
+    "uniform vec3 uColA; uniform vec3 uColB; uniform float uBands; uniform float uSeed; uniform float uFade;",
+    "varying vec3 vN; varying vec3 vW; varying vec3 vL;",
+    "void main(){",
+    "  float lat = vL.y; float lon = atan(vL.z, vL.x);",
+    "  float band = 0.5 + 0.5 * sin(lat * uBands + 0.7 * sin(lat * uBands * 0.41 + lon * 2.0 + uSeed) + uSeed * 3.0);",
+    "  float fine = 0.5 + 0.5 * sin(lat * uBands * 3.1 + lon * 1.3 + uSeed);",
+    "  band = mix(0.5, band * 0.8 + fine * 0.2, step(0.5, uBands));",
+    "  vec3 base = mix(uColA, uColB, band);",
+    "  vec3 N = normalize(vN);",
+    "  vec3 L = normalize(normalize(-vW) * 0.6 + vec3(0.0, 0.85, 0.35));",   // lit from above and from the disk
+    "  float nd = max(dot(N, L), 0.0);",
+    "  vec3 V = normalize(cameraPosition - vW);",
+    "  float rim = pow(1.0 - max(dot(N, V), 0.0), 2.6);",
+    "  vec3 col = base * (0.30 + 0.70 * nd) + vec3(0.78, 0.9, 1.0) * rim * 0.5;",
+    "  col += vec3(0.9, 0.96, 1.0) * uFade * 0.6;",                          // it whitens as it's torn apart...
+    "  gl_FragColor = vec4(col * (1.0 - uFade), 1.0 - uFade);",              // ...and thins to nothing
+    "}"].join("\n");
+  var PLANET_BUILDERS = {
+    ideator: function (g, def) {   // a bright core inside a wire cage, ringed by six sparks
+      var cage = new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(def.size * 1.7, 1)), lineMat(0.28));
+      g.add(cage);
+      var sat = new THREE.Group();
+      for (var k = 0; k < 6; k++) {
+        var a = k / 6 * Math.PI * 2;
+        var m = new THREE.Mesh(new THREE.SphereGeometry(def.size * 0.16, 12, 8), iceMat(0.9));
+        m.position.set(Math.cos(a) * def.size * 2.6, Math.sin(a * 2) * def.size * 0.5, Math.sin(a) * def.size * 2.6);
+        sat.add(m);
+      }
+      sat.rotation.x = 0.35;
+      g.add(sat);
+      return { spin: sat, cage: cage };
+    },
+    faith: function (g, def) {       // a wide translucent ring, and a moon tethered to it
+      var tilt = -Math.PI / 2 + 0.5;
+      var ring = new THREE.Mesh(new THREE.RingGeometry(def.size * 1.45, def.size * 2.5, 72), new THREE.MeshBasicMaterial({ color: 0xbfe3ff, transparent: true, opacity: 0.36, side: THREE.DoubleSide, depthWrite: false }));
+      ring.rotation.x = tilt; ring.rotation.y = 0.25;
+      g.add(ring);
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(def.size * 2.5, 0.012, 6, 96), iceMat(0.6));
+      rim.rotation.x = tilt; rim.rotation.y = 0.25;
+      g.add(rim);
+      var pair = new THREE.Group();
+      var moon = new THREE.Mesh(new THREE.SphereGeometry(def.size * 0.24, 14, 10), iceMat(0.95));
+      moon.position.set(def.size * 3.4, 0, 0);
+      var lg = new THREE.BufferGeometry();
+      lg.setAttribute("position", new THREE.BufferAttribute(new Float32Array([0, 0, 0, def.size * 3.4, 0, 0]), 3));
+      pair.add(moon); pair.add(new THREE.Line(lg, lineMat(0.5)));
+      pair.rotation.x = 0.5;
+      g.add(pair);
+      return { spin: pair };
+    },
+    blog: function (g, def) {         // a big banded giant wrapped in haze
+      var haze = new THREE.Mesh(new THREE.SphereGeometry(def.size * 1.24, 32, 20), new THREE.MeshBasicMaterial({ color: 0x9fd0ff, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.BackSide }));
+      g.add(haze);
+      var band = new THREE.Mesh(new THREE.TorusGeometry(def.size * 1.08, 0.008, 6, 96), iceMat(0.35));
+      band.rotation.x = Math.PI / 2 - 0.15;
+      g.add(band);
+      return {};
+    }
+  };
+  // outer group: position, orbit-facing rotation and the tidal stretch; inner group: the body
+  // and its parts, counter-rotated so the stretch axis can point at the hole without the
+  // body's own look turning with it
+  function buildPlanet(scene, id, def) {
+    var outer = new THREE.Group(), inner = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.SphereGeometry(def.size, 40, 28), new THREE.ShaderMaterial({
+      uniforms: { uColA: { value: new THREE.Color(def.colA) }, uColB: { value: new THREE.Color(def.colB) }, uBands: { value: def.bands }, uSeed: { value: Math.random() * 6 }, uFade: { value: 0 } },
+      vertexShader: PLANET_VS, fragmentShader: PLANET_FS, transparent: true
+    }));
+    inner.add(body);
+    var parts = PLANET_BUILDERS[id](inner, def) || {};
+    outer.add(inner);
+    scene.add(outer);
+    var mats = [];
+    inner.traverse(function (o) { if (o !== body && o.material && o.material.opacity != null) mats.push({ m: o.material, base: o.material.opacity }); });
+    return { id: id, def: def, size: def.size, group: outer, inner: inner, body: body, parts: parts, mats: mats,
+      ang: def.a0, hot: 0, hotTarget: 0, tide: 0, fade: 0, capturing: false, captured: false,
+      returnFrom: new THREE.Vector3(), returnT: 1, drag: null, trailDim: 1, orbitR: def.r || 1 };
+  }
+  function dressPlanet(p, sc) {
+    var P = p.group.position, th = Math.atan2(-P.z, P.x);
+    p.group.rotation.y = th; p.inner.rotation.y = -th;
+    p.group.scale.set(sc, sc, sc);                       // always uniform: a body is never drawn out of shape
+    p.body.material.uniforms.uFade.value = 0;
+    for (var j = 0; j < p.mats.length; j++) p.mats[j].m.opacity = p.mats[j].base;
+  }
+
+  // ---- a tiny seeded generator: every "random" placement in the fall is fixed per scene, so the
+  // reverse is the same function run backward, not a second animation ----
+  function mulberry(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
-    var lineMat = function (opacity) {
-      return new THREE.LineBasicMaterial({ color: 0xbfe3ff, transparent: true, opacity: opacity, depthWrite: false });
+  }
+  function hashStr(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
+
+  // ---- the near sky: stars that stream past the camera as it falls, drawn in camera space so
+  // both worlds share them. Position is a pure function of progress t (distance travelled grows
+  // as t^3.5, so the stream visibly accelerates); a handful of stars flare white and die at a
+  // fixed t each. Artistic only — nothing here is a claim about real infall. ----
+  function buildFallStars(scene, camera) {
+    var n = coarse ? 260 : 440, DEPTH = 64, NEAR = 2.2, FLARES = 8;
+    var x0 = new Float32Array(n), y0 = new Float32Array(n), z0 = new Float32Array(n), sz = new Float32Array(n), tint = new Float32Array(n), flareT = new Float32Array(n);
+    var r = mulberry(90210);
+    for (var i = 0; i < n; i++) {
+      x0[i] = (r() * 2 - 1) * 1.35; y0[i] = (r() * 2 - 1) * 1.05; z0[i] = r();
+      sz[i] = 0.7 + r() * 1.3; tint[i] = r();
+      flareT[i] = i < FLARES ? 0.28 + r() * 0.56 : -1;
+      if (i < FLARES) { x0[i] *= 0.55; y0[i] *= 0.55; }             // the flares happen where you can see them
+    }
+    var pg = new THREE.BufferGeometry();
+    var pPos = new Float32Array(n * 3), pCol = new Float32Array(n * 3), pSize = new Float32Array(n);
+    pg.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+    pg.setAttribute("color", new THREE.BufferAttribute(pCol, 3));
+    pg.setAttribute("aSize", new THREE.BufferAttribute(pSize, 1));
+    var pts = new THREE.Points(pg, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+      uniforms: { uScale: { value: 300 } },
+      vertexShader: [
+        "attribute float aSize; attribute vec3 color; uniform float uScale; varying vec3 vC;",
+        "void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vC = color;",
+        "  gl_PointSize = clamp(aSize * uScale / max(-mv.z, 0.5), 0.0, 96.0); gl_Position = projectionMatrix * mv; }"].join("\n"),
+      fragmentShader: [
+        "precision highp float; varying vec3 vC;",
+        "void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.08, d); gl_FragColor = vec4(vC * a, a); }"].join("\n")
+    }));
+    pts.renderOrder = 14; pts.frustumCulled = false;
+    var lg = new THREE.BufferGeometry();
+    var lPos = new Float32Array(n * 6), lCol = new Float32Array(n * 6);
+    lg.setAttribute("position", new THREE.BufferAttribute(lPos, 3));
+    lg.setAttribute("color", new THREE.BufferAttribute(lCol, 3));
+    var lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
+    lines.renderOrder = 14; lines.frustumCulled = false;
+    var group = new THREE.Group();
+    group.add(lines); group.add(pts);
+    camera.add(group);
+    scene.add(camera);
+    pts.visible = false; lines.visible = false;
+    function set(t, amount) {
+      if (amount <= 0.001) { pts.visible = false; lines.visible = false; return; }
+      pts.visible = true; lines.visible = true;
+      var S = 0.10 * t + 1.7 * Math.pow(t, 3.5), v = 0.10 + 5.95 * Math.pow(t, 2.5);
+      var tanF = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.25, aspect = camera.aspect;
+      pts.material.uniforms.uScale.value = window.innerHeight * 0.13 * Math.min(window.devicePixelRatio || 1, 2);
+      for (var i = 0; i < n; i++) {
+        var z = (z0[i] + S) % 1, d = NEAR + DEPTH * (1 - z);
+        var x = x0[i] * aspect * tanF * d, y = y0[i] * tanF * d;
+        var d2 = Math.min(NEAR + DEPTH, d + v * 1.15 * (0.6 + 0.4 * tint[i]));
+        var x2 = x0[i] * aspect * tanF * d2, y2 = y0[i] * tanF * d2;
+        var a = amount * smooth(NEAR, NEAR + 5, d) * (1 - smooth(DEPTH * 0.55, DEPTH + NEAR, d)) * (0.3 + 0.5 * tint[i]);
+        var cr = 0.62 + 0.3 * tint[i], cg = 0.78 + 0.18 * tint[i], cb = 1.0, size = sz[i];
+        if (flareT[i] > 0) {
+          var f = Math.exp(-Math.pow((t - flareT[i]) / 0.045, 2)), dead = smooth(flareT[i], flareT[i] + 0.07, t);
+          size *= 1 + 14 * f; a *= (1 + 3.0 * f) * (1 - 0.88 * dead);
+          cr = cr + (1.0 - cr) * f; cg = cg + (1.0 - cg) * f;
+        }
+        var o = i * 3;
+        pPos[o] = x; pPos[o + 1] = y; pPos[o + 2] = -d;
+        pCol[o] = cr * a; pCol[o + 1] = cg * a; pCol[o + 2] = cb * a;
+        pSize[i] = size;
+        var q = i * 6, la = a * Math.min(1, v * 0.35);
+        lPos[q] = x; lPos[q + 1] = y; lPos[q + 2] = -d; lPos[q + 3] = x2; lPos[q + 4] = y2; lPos[q + 5] = -d2;
+        lCol[q] = cr * la; lCol[q + 1] = cg * la; lCol[q + 2] = cb * la;
+        lCol[q + 3] = 0; lCol[q + 4] = 0; lCol[q + 5] = 0;
+      }
+      pg.attributes.position.needsUpdate = true; pg.attributes.color.needsUpdate = true; pg.attributes.aSize.needsUpdate = true;
+      lg.attributes.position.needsUpdate = true; lg.attributes.color.needsUpdate = true;
+    }
+    return { set: set };
+  }
+
+  // ---- the iris: the outside view seen through a circular window that closes to a point. A plain
+  // black overlay with a transparent disc cut out of it; 1 = fully open (not shown at all). ----
+  var irisEl = $("#iris"), lastIris = -1;
+  function setIris(open, cx, cy) {
+    if (open >= 0.999) { if (lastIris !== 1) { irisEl.style.display = "none"; lastIris = 1; } return; }
+    var W = window.innerWidth, H = window.innerHeight;
+    var cover = Math.max(Math.hypot(cx, cy), Math.hypot(W - cx, cy), Math.hypot(cx, H - cy), Math.hypot(W - cx, H - cy)) + 4;
+    var R = cover * open;
+    if (lastIris === 1 || lastIris < 0) irisEl.style.display = "block";
+    irisEl.style.background = "radial-gradient(circle at " + cx.toFixed(1) + "px " + cy.toFixed(1) + "px, transparent " + Math.max(0, R - 1.5).toFixed(1) + "px, #000 " + (R + 1.5).toFixed(1) + "px)";
+    lastIris = open;
+  }
+
+  // ---- the debris: a marker's break-up, drawn in screen space on its own canvas layer that sits
+  // above everything including the page beyond the horizon. The wake that rides into the hole is
+  // therefore the very same stroke that ends up as the line down the middle of the project page:
+  // it is never faded out and replaced. Each ember is a pure function of progress t and a seeded
+  // random, so playing t backward is the exact reverse. ----
+  function makeDebris(canvas) {
+    var ctx = canvas.getContext("2d");
+    var W = 1, H = 1, dpr = 1, cleared = true;
+    var N = coarse ? 36 : 52, WAKE = 7, WAKE_DT = 0.012;
+    var seedsById = {};
+    function seeds(id) {
+      if (seedsById[id]) return seedsById[id];
+      var r = mulberry(hashStr(id)), s = [], order = [];
+      for (var k = 0; k < N; k++) order.push(k);
+      for (var k2 = N - 1; k2 > 0; k2--) { var j = Math.floor(r() * (k2 + 1)); var tmp = order[k2]; order[k2] = order[j]; order[j] = tmp; }
+      for (var i = 0; i < N; i++) s.push({ a: r() * Math.PI * 2, b: 0.35 + r() * 1.4, d: r(), w: (r() - 0.5) * 2, y: (order[i] / (N - 1) - 0.5) * 0.98, s: 1.2 + r() * 1.8, c: r() });
+      return (seedsById[id] = s);
+    }
+    function resize() { dpr = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight; canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+    resize(); window.addEventListener("resize", resize);
+    var A = { x: 0, y: 0 }, B = { x: 0, y: 0 };     // the line's two ends this frame (screen px)
+    var _p = { x: 0, y: 0 }, _q = { x: 0, y: 0 };
+    function ember(sd, t, M, Hc, kind, out) {
+      var ub = smooth(0, 0.2, t);
+      var bx = M.x + Math.cos(sd.a) * sd.b * M.r * ub, by = M.y + Math.sin(sd.a) * sd.b * M.r * ub * 0.8;
+      var us = Math.pow(smooth(0.1 + sd.d * 0.3, 0.8, t), 1.7);
+      var dx = Hc.x - bx, dy = Hc.y - by, L = Math.hypot(dx, dy) || 1;
+      var wob = Math.sin(us * Math.PI) * sd.w * M.r * 2.2;
+      var sx = bx + dx * us - dy / L * wob, sy = by + dy * us + dx / L * wob;
+      var ul = smooth(0.74, 0.96, t);
+      var lx = Hc.x, ly = Hc.y;
+      if (kind === "line") { var f = 0.5 + sd.y; lx = A.x + (B.x - A.x) * f; ly = A.y + (B.y - A.y) * f; }
+      out.x = sx + (lx - sx) * ul; out.y = sy + (ly - sy) * ul;
+      return ub;
+    }
+    function clear() { if (cleared) return; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); cleared = true; }
+    // o: { id, t, dir, M:{x,y,r}, Hc:{x,y}, kind, rect (the page line's box or null), dock 0..1, time }
+    function draw(o) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H); cleared = false;
+      var t = o.t, kind = o.kind, sd = seeds(o.id), M = o.M, Hc = o.Hc, dock = o.dock;
+      // the line: first straight down the middle through the hole, then eased onto the page's own slot
+      var ax = Hc.x, ay = -0.06 * H, bx = Hc.x, by = 1.06 * H;
+      if (o.rect && dock > 0) {
+        var rc = o.rect, horiz = rc.width > rc.height;
+        var rax = horiz ? rc.left : rc.left + rc.width / 2, ray = rc.top, rbx = horiz ? rc.right : rax, rby = horiz ? rc.top : rc.bottom;
+        ax += (rax - ax) * dock; ay += (ray - ay) * dock; bx += (rbx - bx) * dock; by += (rby - by) * dock;
+      }
+      A.x = ax; A.y = ay; B.x = bx; B.y = by;
+      var ul = smooth(0.74, 0.96, t);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      var emberA = kind === "about" ? 1 - smooth(0.9, 1, t) : 1 - 0.9 * dock;
+      if (emberA > 0.003) {
+        for (var i = 0; i < N; i++) {
+          var s = sd[i];
+          var ub = ember(s, t, M, Hc, kind, _p);
+          var al = ub * emberA * (0.5 + 0.5 * s.c);
+          if (al <= 0.004) continue;
+          // the wake: where this ember just was, so it always trails the direction of travel
+          var px = _p.x, py = _p.y;
+          for (var k = 1; k <= WAKE; k++) {
+            var tk = Math.min(1, Math.max(0, t - o.dir * k * WAKE_DT));
+            ember(s, tk, M, Hc, kind, _q);
+            var wa = al * 0.6 * (1 - (k - 1) / WAKE);
+            ctx.strokeStyle = "rgba(170,210,255," + wa.toFixed(3) + ")";
+            ctx.lineWidth = s.s * (1.1 - 0.5 * ul) * (1 - (k - 1) / WAKE * 0.6);
+            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(_q.x, _q.y); ctx.stroke();
+            px = _q.x; py = _q.y;
+          }
+          ctx.fillStyle = "rgba(236,246,255," + al.toFixed(3) + ")";
+          ctx.beginPath(); ctx.arc(_p.x, _p.y, s.s * (1.15 - 0.55 * ul), 0, Math.PI * 2); ctx.fill();
+          if (s.c > 0.7) {   // the hotter embers carry a soft glow
+            ctx.fillStyle = "rgba(150,200,255," + (al * 0.22).toFixed(3) + ")";
+            ctx.beginPath(); ctx.arc(_p.x, _p.y, s.s * 4 * (1 - 0.6 * ul), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
+      if (kind === "line" && ul > 0.001) {
+        var la = ul * (0.62 + 0.38 * dock);
+        var g = ctx.createLinearGradient(ax, ay, bx, by);
+        g.addColorStop(0, "rgba(191,227,255,0)"); g.addColorStop(0.1, "rgba(191,227,255," + (0.55 * la).toFixed(3) + ")");
+        g.addColorStop(0.9, "rgba(191,227,255," + (0.6 * la).toFixed(3) + ")"); g.addColorStop(1, "rgba(191,227,255,0)");
+        ctx.strokeStyle = g; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.strokeStyle = "rgba(150,200,255," + (0.16 * la).toFixed(3) + ")"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        // the slow pulse that travels the line (the same 6 s cadence the page's own rule used)
+        var f = (o.time / 6) % 1, hw = 0.12;
+        var fx0 = ax + (bx - ax) * (f - hw), fy0 = ay + (by - ay) * (f - hw), fx1 = ax + (bx - ax) * (f + hw), fy1 = ay + (by - ay) * (f + hw);
+        var pg = ctx.createLinearGradient(fx0, fy0, fx1, fy1);
+        pg.addColorStop(0, "rgba(255,255,255,0)"); pg.addColorStop(0.5, "rgba(255,255,255," + (0.95 * la).toFixed(3) + ")"); pg.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.strokeStyle = pg; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(fx0, fy0); ctx.lineTo(fx1, fy1); ctx.stroke();
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }
+    return { draw: draw, clear: clear, last: function () { return cleared ? null : [A.x, A.y, B.x, B.y]; } };
+  }
+
+  // ---- the fall: one state machine, owned by each world, that plays the crossing as a pure
+  // function of progress t in [0, 1]. Going in runs t up; every way back (button, Escape, the
+  // browser's own Back, a click mid-way) runs the very same t back down, so the return is the
+  // entry reversed rather than a second animation. Two kinds:
+  //   about  the camera drives at the hole while the near sky streams past faster and faster and
+  //          the outside view closes into a circular window that shrinks to a point (the iris)
+  //   line   a marker is captured: the camera rides its debris in until the horizon fills the frame
+  // Nothing in here changes the shape of the hole or of the frame: only motion, speed, field of
+  // view, particles and the iris. The hole is always at the origin for both worlds. ----
+  var FALL = { dur: 3.4, aboutDur: 3.6, fov: 24 };
+  function makeFaller(o) {                      // o: { camera, VIS_R }
+    var HR = 0.278 * o.VIS_R;                   // the rendered horizon's radius, world units
+    var ORIGIN = new THREE.Vector3();
+    var F = { mode: "idle", kind: null, id: null, marker: null, t: 0, dir: 1, dur: 1, cb: null, d0: 12, dEnd: 1, hold: 0, tgt0: new THREE.Vector3() };
+    var vis = { fov: 0, roll: 0, boost: 0, stream: 0, streamT: 0, iris: 1, blackout: 0, t: 0 };
+    var dirV = new THREE.Vector3(0, 0.36, 1).normalize();
+    function dFill(fovDeg) { var a = o.camera.aspect; return HR / (Math.tan(THREE.MathUtils.degToRad(fovDeg / 2)) * Math.sqrt(1 + a * a)); }
+    function endDist(kind) { var f = dFill(46 + FALL.fov); return kind === "about" ? Math.max(0.3, f * 1.7) : Math.max(0.2, f * 0.58); }
+    function reset() {
+      F.mode = "idle"; F.t = 0; F.dir = 1; F.hold = 0; F.cb = null; F.id = null; F.marker = null; F.kind = null;
+      vis.fov = 0; vis.roll = 0; vis.boost = 0; vis.stream = 0; vis.streamT = 0; vis.iris = 1; vis.blackout = 0; vis.t = 0;
+    }
+    function evalVis(t) {
+      var k = F.kind;
+      vis.t = t;
+      vis.fov = FALL.fov * smooth(0.1, 0.9, t);
+      vis.roll = 0.2 * smooth(0.3, 1, t);
+      vis.boost = smooth(0.05, 0.8, t);
+      vis.stream = smooth(0.02, 0.3, t) * (k === "about" ? 1 : 0.6);
+      vis.streamT = t;
+      var u = Math.min(1, Math.max(0, (t - 0.22) / 0.78));
+      vis.iris = k === "about" ? 1 - Math.pow(u, 1.9) : 1;         // closes slowly at first, then rushes to a point
+      vis.blackout = k === "about" ? 0 : smooth(0.86, 0.985, t);
+    }
+    function pose(t, pos, tgt) {
+      var q = Math.pow(t, 2.2);
+      pos.copy(dirV).multiplyScalar(F.d0 * Math.pow(F.dEnd / F.d0, q));
+      tgt.lerpVectors(F.tgt0, ORIGIN, smooth(0, 0.35, t));
+    }
+    // id: scene; kind: "about" | "line"; marker: the body that breaks up (or null for the hole itself)
+    function begin(id, kind, marker, pos, tgt, instant, cb) {
+      if (F.mode !== "idle" && F.id !== id) reset();          // a different target mid-way: start clean
+      F.cb = cb || null; F.id = id; F.kind = kind; F.marker = marker || null;
+      if (F.mode === "idle") {
+        F.tgt0.copy(tgt);
+        dirV.copy(pos); if (dirV.lengthSq() < 1e-6) dirV.set(0, 0.36, 1); dirV.normalize();
+        F.d0 = Math.max(pos.length(), HR * 3);
+      }
+      F.dEnd = endDist(kind);
+      F.dur = kind === "about" ? FALL.aboutDur : FALL.dur;
+      F.dir = 1; F.hold = 0;
+      if (instant) { F.mode = "crossed"; F.t = 1; evalVis(1); pose(1, pos, tgt); return 0; }
+      F.mode = "run";
+      return F.dur * (1 - F.t);
+    }
+    function leave(instant) {
+      var was = F.mode;
+      F.cb = null;
+      if (was === "idle") return was;
+      if (instant) { reset(); return was; }
+      F.mode = "run"; F.dir = -1;
+      F.hold = was === "crossed" ? 0.55 : 0;      // the page fades out over black first, then the same path runs back
+      return was;
+    }
+    function update(dt, pos, tgt) {
+      if (F.mode === "run") {
+        if (F.hold > 0) { F.hold -= dt; evalVis(F.t); pose(F.t, pos, tgt); return F.mode; }
+        F.t += F.dir * dt / F.dur;
+        if (F.dir > 0 && F.t >= 1) {
+          F.t = 1; evalVis(1); pose(1, pos, tgt); F.mode = "crossed";
+          var cb = F.cb; F.cb = null; if (cb) cb();
+        } else if (F.dir < 0 && F.t <= 0) {
+          pose(0, pos, tgt); reset();
+        } else { evalVis(F.t); pose(F.t, pos, tgt); }
+      } else if (F.mode === "crossed") {
+        evalVis(1); pose(1, pos, tgt);
+      }
+      return F.mode;
+    }
+    return { begin: begin, leave: leave, update: update, vis: vis, HR: HR, reset: reset,
+      mode: function () { return F.mode; }, kind: function () { return F.kind; }, id: function () { return F.id; },
+      marker: function () { return F.marker; }, dir: function () { return F.dir; }, t: function () { return F.t; } };
+  }
+
+  // ---------------------------------------------------------------- 引力 world
+  // The singularity sits fixed at the origin in the dip of its bent lattice. The five stations
+  // (three projects, two "coming soon" placeholders) are small abstract markers held in one
+  // formation — an arc above and behind the hole — that slowly circles it; the camera circles
+  // with it, so the arrangement on screen holds still, and the wheel / a background drag turn
+  // the camera alone to browse along the arc. Drag a marker into the hole (or just click it) and
+  // it breaks into embers whose wake the camera rides in; the wake becomes the line down the
+  // middle of the page beyond the horizon.
+  function createWorld(renderer) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    var scene = new THREE.Scene();
+    var BASE_FOV = 46;
+    var camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 500);
+    var ORIGIN = new THREE.Vector3();
+
+    // ---- stars: cold, sparse, far, mostly the upper sky ----
+    var stars = buildStars(scene, coarse ? 1600 : 3000, function (q) {
+      var r = 170 + Math.random() * 90, th = Math.random() * Math.PI * 2, ph = Math.acos(1 - Math.random() * 1.25);
+      q[0] = r * Math.sin(ph) * Math.cos(th); q[1] = r * Math.cos(ph) - 20; q[2] = r * Math.sin(ph) * Math.sin(th);
+    }, 1.35);
+    var streakU = stars.streakU;
+
+    // ---- the field: a wire lattice bent by the singularity, fading to nothing before any edge ----
+    // A true square lattice built from line segments (a wireframe plane would show triangle
+    // diagonals). Each line is subdivided so the vertex shader can bend it into the well.
+    var GRID_HALF = 70, GRID_N = coarse ? 90 : 140;
+    var gridGeo = (function () {
+      var step = GRID_HALF * 2 / GRID_N, v = new Float32Array((GRID_N + 1) * GRID_N * 12), k = 0;
+      for (var i = 0; i <= GRID_N; i++) {
+        var c = -GRID_HALF + i * step;
+        for (var j = 0; j < GRID_N; j++) {
+          var a = -GRID_HALF + j * step, b = a + step;
+          v[k++] = a; v[k++] = 0; v[k++] = c;  v[k++] = b; v[k++] = 0; v[k++] = c;   // along x
+          v[k++] = c; v[k++] = 0; v[k++] = a;  v[k++] = c; v[k++] = 0; v[k++] = b;   // along z
+        }
+      }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(v, 3));
+      return g;
+    })();
+    var gridU = {
+      uHole: { value: new THREE.Vector3(0, 0, 0) },
+      uStrength: { value: 3.0 },
+      uRipple: { value: 0 },
+      uRippleAmp: { value: 0 },
+      uFade: { value: new THREE.Vector2(28, 56) },
+      uCamPos: { value: camera.position },
+      uBoost: { value: 0 },
+      uDim: { value: 1 }
     };
+    var gridMat = new THREE.ShaderMaterial({
+      uniforms: gridU,
+      transparent: true, depthWrite: false,
+      vertexShader: [
+        "uniform vec3 uHole; uniform float uStrength; uniform float uRipple; uniform float uRippleAmp;",
+        "uniform vec2 uFade; uniform vec3 uCamPos; uniform float uBoost; uniform float uDim;",
+        "varying vec3 vColor; varying float vAlpha;",
+        "void main(){",
+        "  vec3 p = position;",
+        "  vec2 d2 = p.xz - uHole.xz;",
+        "  float d = length(d2);",
+        "  float well = -uStrength / (1.0 + d*d*0.10) - uStrength*0.18 / (1.0 + d*0.45);",
+        "  float ripple = sin(d*1.35 - uRipple) * uRippleAmp * exp(-d*0.16) * smoothstep(0.0, 2.0, d);",
+        "  float pull = 0.42 / (1.0 + d*d*0.22);",          // lensing: the lattice is drawn in toward the singularity
+        "  p.xz -= d2 * pull;",
+        "  p.y += well + ripple;",
+        "  float near = 1.0 / (1.0 + d*d*0.06);",
+        "  vec3 cold = vec3(0.15, 0.34, 0.68);",
+        "  vec3 ice  = vec3(0.82, 0.93, 1.0);",
+        "  vColor = mix(cold, ice, near * (0.7 + 0.3*uBoost));",
+        "  float ringFade = 1.0 - smoothstep(uFade.x, uFade.y, length(p.xz));",  // no edge, ever
+        "  float eat = smoothstep(0.30, 1.4, d);",                              // dissolves into the horizon
+        "  float camD = distance(p, uCamPos);",
+        "  float fog = exp(-camD * 0.021) * smoothstep(3.0, 11.0, camD);",   // also thins right under the camera
+        "  vAlpha = ringFade * eat * fog * (0.30 + 0.45*near) * uDim;",
+        "  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);",
+        "}"].join("\n"),
+      fragmentShader: [
+        "varying vec3 vColor; varying float vAlpha;",
+        "void main(){ gl_FragColor = vec4(vColor, vAlpha); }"].join("\n")
+    });
+    var grid = new THREE.LineSegments(gridGeo, gridMat);
+    grid.frustumCulled = false;
+    scene.add(grid);
+
+    // ---- the singularity, fixed at the origin; rendered 1.8x its matter scale so the horizon
+    // reads clearly from the overview without crowding the markers ----
+    var sg = buildSingularity(scene, camera, dpr, 2.1, 1.8);
+    var hole = sg.hole, holeU = sg.holeU, VIS_R = sg.VIS_R, updateMatter = sg.update;
+    hole.position.set(0, 0, 0);
+    var fallStars = buildFallStars(scene, camera);
+    var debris = makeDebris($("#trail"));
+
+    // ---- the five station markers: one small, distinct object per station, held in formation ----
+    // Formation-local positions (an arc above and behind the hole, as seen from the home camera);
+    // the whole formation turns about the hole via formAng — real motion, always advancing, never
+    // driven by input — and the camera turns with it, so the arrangement on screen holds still.
+    // "about" has no station of its own in this skin — About is entered only by the black hole
+    // itself (click/tap it, or the About card on the reading surface).
+    var ARC_Y = 1.25;
+    // Five stations on one shared ring (radius ORBIT_R, height ARC_Y) on one contiguous arc
+    // centred on theta = PI — the far side of the circle from the home camera, which sits at +z
+    // looking toward -z. The three real projects hold the three central slots (ideator left,
+    // faith centre, blog right, as in the reference composition); the two placeholders bookend
+    // them. The camera centres the station whose theta equals camAngle + PI, so the browsable
+    // range of camAngle (CAM_LIMIT_*, below) is derived from the REAL projects' thetas: the ends
+    // of the album are the real projects, and a placeholder is always in view just past each end,
+    // reachable by the rubber-band pull but never centred. Keeping that span well under PI is
+    // what guarantees no station can ever swing round to the camera's own side of the hole,
+    // where its label would cross the horizon.
+    var BASE_THETA = {
+      soon1:   Math.PI + 1.00,
+      ideator: Math.PI + 0.55,
+      faith:   Math.PI,
+      blog:    Math.PI - 0.55,
+      soon2:   Math.PI - 1.00
+    };
+    var PLACEHOLDER_IDS = { soon1: true, soon2: true };
+    // every station is a slot the camera can face — a placeholder centred still only acks
+    var BROWSABLE = ["soon1", "ideator", "faith", "blog", "soon2"];
+    var STATION_ORDER = Object.keys(BASE_THETA).sort(function (a, b) { return BASE_THETA[b] - BASE_THETA[a]; });   // left to right on screen
+    // camAngle: the viewer's own angle around the hole — a SEPARATE piece of state from formAng
+    // (the markers' real orbital motion). It is driven only by the wheel and by dragging the
+    // empty background, steers the CAMERA only (turnCam, below), and never touches a marker.
+    // camAngleRaw is the free-running accumulator the inputs add to; it may sit past a limit (up
+    // to CAM_RAW_SLACK) so reversing direction responds immediately, and camAngle — the value
+    // actually rendered — is always derived from it through rubberBand(). Every input path
+    // (wheel, drag, the per-frame momentum integration) goes through addCamAngle().
+    var camAngle = 0, camAngleRaw = 0, camVel = 0, lastWheelStep = 0;
+    var wheelGestureT = 0, wheelAccum = 0, wheelSteps = 0, wheelDir = 0;
+    var WHEEL_GESTURE_GAP = 70;   // ms since the last wheel event: past this, a new discrete gesture starts
+    var WHEEL_NOTCH = 90;         // extra accumulated |deltaY| needed for each step AFTER the first in one gesture — close to one real mouse notch, so a further clear notch earns one more step while small trackpad dribbles need several to add up to one
+    // camGoal: a slot angle the camera has been asked to face directly (a click on a station, or
+    // the idle showcase) — the per-frame settle below eases onto it in one continuous turn
+    // instead of stepping slot by slot, and drops it once there. null when nothing is pending.
+    var camGoal = null, CAM_GOAL_TAU = 0.55, CAM_GOAL_EPS = 0.002;
+    var CAM_SENS = 0.009, CAM_DECAY = 0.35, CAM_SETTLE_EPS = 0.0008, CAM_DETENT_VEL = 0.25;
+    // the angles the camera can rest on: one per browsable station, in camAngle terms, ascending
+    var SLOT_ANGLES = BROWSABLE.map(function (id) { return BASE_THETA[id] - Math.PI; }).sort(function (a, b) { return a - b; });
+    var CAM_LIMIT_MIN = SLOT_ANGLES[0], CAM_LIMIT_MAX = SLOT_ANGLES[SLOT_ANGLES.length - 1];
+    var CAM_RUBBER = 0.28;          // radians of asymptotic overscroll past a limit: enough to pull a placeholder toward the centre, never onto it
+    var CAM_RAW_SLACK = CAM_RUBBER * 2.5;   // hard cap on how far the raw accumulator can drift past the limit
+    var CAM_SPRING_TAU = 0.32;      // spring-back from an overscroll (seconds)
+    var CAM_DETENT_TAU = 0.45;      // easing onto the nearest slot once input and momentum are spent
+    // rubberBand(): maps a raw angle outside [MIN,MAX] to a display angle that approaches but
+    // never reaches MIN-CAM_RUBBER / MAX+CAM_RUBBER — progressively increasing resistance, no wall.
+    function rubberBand(raw) {
+      if (raw < CAM_LIMIT_MIN) { var o1 = CAM_LIMIT_MIN - raw; return CAM_LIMIT_MIN - CAM_RUBBER * o1 / (o1 + CAM_RUBBER); }
+      if (raw > CAM_LIMIT_MAX) { var o2 = raw - CAM_LIMIT_MAX; return CAM_LIMIT_MAX + CAM_RUBBER * o2 / (o2 + CAM_RUBBER); }
+      return raw;
+    }
+    function nearestSlotIndex(a) {
+      var best = 0;
+      for (var i = 1; i < SLOT_ANGLES.length; i++) if (Math.abs(SLOT_ANGLES[i] - a) < Math.abs(SLOT_ANGLES[best] - a)) best = i;
+      return best;
+    }
+    function addCamAngle(delta) {
+      if (!delta) return;
+      var slack = reduced ? 0 : CAM_RAW_SLACK;   // reduced motion: hard clamp, no overscroll at all
+      camAngleRaw = Math.min(CAM_LIMIT_MAX + slack, Math.max(CAM_LIMIT_MIN - slack, camAngleRaw + delta));
+      camAngle = reduced ? camAngleRaw : rubberBand(camAngleRaw);
+    }
+    function setCamAngle(a) { camAngleRaw = a; camAngle = reduced ? a : rubberBand(a); }
+    // faceStation(): turn the camera to a station — one smooth glide however many slots away
+    function faceStation(id) {
+      if (BASE_THETA[id] == null) return;
+      var a = BASE_THETA[id] - Math.PI;
+      if (reduced) { camGoal = null; setCamAngle(a); return; }
+      camVel = 0; camGoal = a;
+    }
+    // wheel: scrolling down brings the station on the right to the centre (the camera turns the
+    // other way), scrolling up the one on the left. Every discrete wheel gesture (mouse notch, or
+    // a paused trackpad nudge) steps exactly one slot, gliding smoothly via the same camGoal path
+    // a click on a station uses — not raw momentum. A single continuous, un-paused gesture (a
+    // trackpad swipe firing many same-direction events with no gap) only earns a SECOND step once
+    // it has clearly kept going past WHEEL_NOTCH more of accumulated delta, so one soft swipe can't
+    // accidentally chain-jump multiple stations, while a fast/sustained scroll still can. Reversing
+    // direction (even mid-gesture) always resets and steps immediately, for an instant response.
+    //
+    // (Historical note: an earlier version fed raw wheel deltaY into camVel as momentum, decayed
+    // per frame, then pulled the settled angle onto the nearest slot once the velocity dropped
+    // below a threshold. The two timings didn't line up: a single notch's momentum decayed below
+    // that threshold before camAngleRaw had travelled far enough to cross the midpoint into the
+    // next slot's own "nearest" zone, so the detent pulled it back to the slot it started at —
+    // requiring a second notch to actually cross over. Driving wheel input through explicit slot
+    // steps sidesteps that timing dependency entirely.)
+    function wheelBrowse(dyNorm) {
+      if (current) return;
+      var dir = dyNorm > 0 ? -1 : 1;
+      var now = performance.now();
+      if (reduced) {
+        if (now - lastWheelStep < 160) return;
+        lastWheelStep = now;
+        var i = nearestSlotIndex(camAngleRaw) + dir;
+        setCamAngle(SLOT_ANGLES[Math.max(0, Math.min(SLOT_ANGLES.length - 1, i))]);
+        return;
+      }
+      if (now - wheelGestureT > WHEEL_GESTURE_GAP || dir !== wheelDir) { wheelAccum = 0; wheelSteps = 0; wheelDir = dir; }
+      wheelGestureT = now;
+      function stepOnce() {
+        var base = camGoal !== null ? nearestSlotIndex(camGoal) : nearestSlotIndex(camAngleRaw);
+        var raw = base + dir;
+        if (raw < 0 || raw > SLOT_ANGLES.length - 1) {
+          // already at the end station in this direction: a brief rubber-band give rather than
+          // silently doing nothing — reuses the same overscroll/spring-back the drag path uses.
+          camGoal = null;
+          addCamAngle(dir * CAM_RUBBER * 0.35);
+        } else {
+          camGoal = SLOT_ANGLES[raw]; camVel = 0;
+        }
+        wheelSteps++;
+      }
+      if (wheelSteps === 0) {
+        // the first event of a fresh gesture always steps immediately, whatever its own size —
+        // and that size is fully spent here, never also counted toward a second step below.
+        stepOnce();
+        wheelAccum = 0;
+        return;
+      }
+      // every event after the first in the SAME gesture (no gap, no direction change) has to add
+      // up to roughly one more full notch's worth before it earns another step — so one soft,
+      // continuous trackpad swipe's many tiny deltas can't chain-jump multiple stations, while a
+      // clearly sustained/fast scroll (each addition already near/above the threshold) still can.
+      wheelAccum += Math.abs(dyNorm);
+      while (wheelAccum >= WHEEL_NOTCH) { stepOnce(); wheelAccum -= WHEEL_NOTCH; }
+    }
+    var formAng = 0, OMEGA = 0.05, R_CAP = 3.2, MARK_R = 0.95;
+    var FRONT_NDC_RANGE = 0.16;   // screen-space (NDC) half-width within which a marker can read as "aligned" above the hole; tuned against the actual projection below
+    // turn(): the markers' real orbital transform — driven only by formAng.
+    function turn(x, z, out, y) { var c = Math.cos(formAng), s = Math.sin(formAng); out.set(x * c + z * s, y, -x * s + z * c); return out; }
+    // turnCam(): the camera's transform — the same real orbital angle PLUS the viewer's own
+    // camAngle, so the camera can browse independently of where the markers actually are.
+    function turnCam(x, z, out, y) { var a = formAng + camAngle, c = Math.cos(a), s = Math.sin(a); out.set(x * c + z * s, y, -x * s + z * c); return out; }
+    // true equal-radius orbit: every station sits at the same (x,z) distance from the hole
+    // (which is at the origin), differing only by angle — perspective alone makes some read as
+    // nearer/farther as the formation turns. y (ARC_Y) is a shared constant, so the full 3D
+    // distance from the hole is identical for every station too. Narrow screens scale the same
+    // radius down (a proportional shrink), never changing the equal-radius shape.
+    var ORBIT_R = 9.8;
+    // the selection's elbow room: the selected station's neighbours are pushed a little further
+    // along the arc (an ANGULAR offset only — the radius, and so every station's distance from
+    // the hole, never changes), the ones beyond them less, so the rest of the arc reads as
+    // tucked together by comparison. spread[id] is recomputed every frame from each station's
+    // smoothed selection weight (mk.sel), so it eases as the selection moves and never jumps.
+    var SPREAD_PUSH = 0.11, SPREAD_FALL = [0, 1, 0.45, 0.2, 0.1];
+    var spread = {};
+    function updateSpread() {
+      for (var i = 0; i < STATION_ORDER.length; i++) {
+        var a = STATION_ORDER[i], d = 0;
+        for (var j = 0; j < STATION_ORDER.length; j++) {
+          if (i === j) continue;
+          var w = markers[STATION_ORDER[j]] ? markers[STATION_ORDER[j]].sel : 0;
+          if (w > 0.0005) d += w * SPREAD_PUSH * SPREAD_FALL[Math.abs(i - j)] * (BASE_THETA[a] > BASE_THETA[STATION_ORDER[j]] ? 1 : -1);
+        }
+        spread[a] = d;
+      }
+    }
+    function slotOf(id, out) {
+      var k = isNarrow() ? 0.58 : 1;   // a proportional shrink for narrow screens: the arc keeps its shape, its labels stay apart
+      var theta = BASE_THETA[id] + (spread[id] || 0);
+      var r = ORBIT_R * k;
+      return turn(r * Math.sin(theta), r * Math.cos(theta), out, ARC_Y);
+    }
     var markers = {};
     function makeMarker(id, build) {
       var g = new THREE.Group();
-      g.position.fromArray(SCENES[id].pos);
+      slotOf(id, g.position);
       var parts = build(g);
       scene.add(g);
-      markers[id] = { group: g, hot: 0, hotTarget: 0, parts: parts, mats: [] };
-      g.traverse(function (o) { if (o.material) markers[id].mats.push({ m: o.material, base: o.material.opacity }); });
+      var mk = markers[id] = { id: id, group: g, hot: 0, hotTarget: 0, parts: parts, mats: [], drag: null, returnFrom: new THREE.Vector3(), returnT: 1, gone: 0, front: 0, sel: 0 };
+      g.traverse(function (o) { if (o.material) mk.mats.push({ m: o.material, base: o.material.opacity }); });
       return g;
     }
-    var ringGeo = function (r, thick) { return new THREE.TorusGeometry(r, thick, 6, 96); };
-
-    makeMarker("about", function (g) {
-      var body = new THREE.Mesh(new THREE.SphereGeometry(0.30, 32, 24), iceMat(0.95));
-      var ring = new THREE.Mesh(ringGeo(0.66, 0.011), iceMat(0.55));
-      ring.rotation.x = Math.PI / 2 - 0.35; ring.rotation.y = 0.2;
-      g.add(body); g.add(ring);
-      return { ring: ring };
-    });
-    makeMarker("ideator", function (g) {
+    makeMarker("ideator", function (g) {         // a scattered constellation around a core
       var core = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 14), iceMat(0.95));
       g.add(core);
       var sat = new THREE.Group();
@@ -743,7 +2300,7 @@
       g.add(sat);
       return { spin: sat };
     });
-    makeMarker("faith", function (g) {
+    makeMarker("faith", function (g) {           // a dashed ring with two dots tethered inside it
       var pair = new THREE.Group();
       var a = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 14), iceMat(0.9));
       var b = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 14), iceMat(0.9));
@@ -763,7 +2320,7 @@
       g.add(circle);
       return { spin: pair, circle: circle };
     });
-    makeMarker("blog", function (g) {
+    makeMarker("blog", function (g) {            // a stack of flat plates
       var stack = new THREE.Group();
       for (var k = 0; k < 5; k++) {
         var m = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.66), new THREE.MeshBasicMaterial({
@@ -777,96 +2334,373 @@
       g.add(stack);
       return { spin: stack };
     });
+    // two placeholder ("coming soon") stations: dim, desaturated, abstract — clearly secondary to
+    // a real project's marker, distinguishable from each other, never a fabricated name or link.
+    var SOON_COLOR = 0x8fa6c4;   // a greyer blue than the projects' ice, so they read as unlit
+    function soonMat(o) { return new THREE.MeshBasicMaterial({ color: SOON_COLOR, transparent: true, opacity: o, depthWrite: false }); }
+    function soonLine(o) { return new THREE.LineBasicMaterial({ color: SOON_COLOR, transparent: true, opacity: o, depthWrite: false }); }
+    makeMarker("soon1", function (g) {   // a faint dashed ring around a barely-visible core
+      var core = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), soonMat(0.16));
+      g.add(core);
+      var dashed = new THREE.LineDashedMaterial({ color: SOON_COLOR, transparent: true, opacity: 0.13, dashSize: 0.1, gapSize: 0.09, depthWrite: false });
+      var pts = [];
+      for (var k = 0; k <= 64; k++) { var t = k / 64 * Math.PI * 2; pts.push(Math.cos(t) * 0.5, Math.sin(t) * 0.18, Math.sin(t) * 0.5); }
+      var lg = new THREE.BufferGeometry();
+      lg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+      var ring = new THREE.LineLoop(lg, dashed);
+      ring.computeLineDistances();
+      g.add(ring);
+      return { spin: ring };
+    });
+    makeMarker("soon2", function (g) {   // a faint open wire lattice — no solid core at all
+      var geo = new THREE.IcosahedronGeometry(0.38, 0);
+      var wire = new THREE.LineSegments(new THREE.WireframeGeometry(geo), soonLine(0.12));
+      g.add(wire);
+      return { spin: wire };
+    });
+    // the capture ring: only visible while a marker is being dragged, so the visitor can see
+    // exactly where "let go" turns into "pulled in"
+    var capRing = (function () {
+      var pts = [];
+      for (var k = 0; k <= 180; k++) { var t = k / 180 * Math.PI * 2; pts.push(Math.cos(t) * R_CAP, 0.02, Math.sin(t) * R_CAP); }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+      var l = new THREE.LineLoop(g, new THREE.LineDashedMaterial({ color: 0xbfe3ff, transparent: true, opacity: 0, dashSize: 0.38, gapSize: 0.26, depthWrite: false }));
+      l.computeLineDistances();
+      scene.add(l);
+      return l;
+    })();
 
-    // ---- projected tags ----
+    // ---- projected tags, and the one blurb above the selected station ----
     var tagEls = {};
     $$(".tag").forEach(function (t) { tagEls[t.dataset.scene] = t; });
+    // the blurb's text is the station's own short description from the overview card — the
+    // single shared content source — and for a placeholder only ever "敬请期待"
+    var blurbEl = $("#tag-blurb"), blurbFor = null;
+    function blurbText(id) {
+      if (PLACEHOLDER_IDS[id]) return "敬请期待";
+      var d = $('.card[data-scene="' + id + '"] .d');
+      return d ? d.textContent : "";
+    }
     var _proj = new THREE.Vector3();
-    function updateTags() {
+    var aboutTagEl = tagEls.about, overviewEl = $("#overview");
+    // The About label tracks the hole's actual on-screen position every frame (so resize, a
+    // narrow layout, and camera browsing all stay correct), preferring just below the hole —
+    // clear of the horizon/disk glow — and falling back above it only if "below" would run into
+    // the reading surface's own hero text/cards beneath the scene.
+    function updateAboutTag() {
+      if (!aboutTagEl) return;
       var inDetail = !!current;
-      Object.keys(markers).forEach(function (id) {
-        var el = tagEls[id];
-        if (inDetail) { el.classList.remove("show"); return; }
-        _proj.copy(markers[id].group.position); _proj.y += 0.95;
+      _proj.copy(hole.position).project(camera);
+      if (inDetail || _proj.z >= 1) { aboutTagEl.classList.remove("show"); return; }
+      var clearance = holeRpx * 1.5 + 14;
+      var floor = overviewEl ? overviewEl.getBoundingClientRect().top : window.innerHeight;
+      var by = Hc.y + clearance;
+      var th = aboutTagEl.offsetHeight || 26;
+      if (by + th > floor - 8) by = Hc.y - clearance;   // no room below: label goes above instead
+      var bx = Math.max(10, Math.min(window.innerWidth - 10, Hc.x));
+      aboutTagEl.classList.toggle("show", by > 4 && by < window.innerHeight - 4);
+      aboutTagEl.style.transform = "translate(-50%, -100%) translate(" + bx.toFixed(1) + "px," + by.toFixed(1) + "px)";
+    }
+    function updateTags() {
+      updateAboutTag();
+      var inDetail = !!current, selId = null, selEl = null, selMk = null, selX = 0, selY = 0;
+      Object.keys(tagEls).forEach(function (id) {
+        if (id === "about") return;   // positioned separately above — it has no station marker
+        var el = tagEls[id], mk = markers[id];
+        if (inDetail || !mk || !mk.group.visible) { el.classList.remove("show", "sel"); return; }
+        _proj.copy(mk.group.position); _proj.y += MARK_R;
         _proj.project(camera);
         var ok = _proj.z < 1 && Math.abs(_proj.x) < 1.05 && Math.abs(_proj.y) < 1.05;
         el.classList.toggle("show", ok);
+        var selected = ok && mk.sel > 0.5;
+        el.classList.toggle("sel", selected);
         if (ok) {
           var sx = (_proj.x * 0.5 + 0.5) * window.innerWidth;
           var sy = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
-          el.style.transform = "translate(-50%, -100%) translate(" + sx.toFixed(1) + "px," + sy.toFixed(1) + "px)";
+          var tagScale = 1 + 0.16 * mk.sel;
+          el.style.transform = "translate(-50%, -100%) translate(" + sx.toFixed(1) + "px," + sy.toFixed(1) + "px) scale(" + tagScale.toFixed(3) + ")";
+          if (selected) { selId = id; selEl = el; selMk = mk; selX = sx; selY = sy; }
         }
       });
+      if (!blurbEl) return;
+      if (!selId) { blurbEl.classList.remove("show"); blurbEl.style.opacity = ""; return; }
+      if (blurbFor !== selId) { blurbFor = selId; blurbEl.textContent = blurbText(selId); blurbEl.classList.toggle("soon", !!PLACEHOLDER_IDS[selId]); }
+      // above the selected label, centred on it, kept inside the viewport horizontally
+      var bw = blurbEl.offsetWidth || 200, th = (selEl.offsetHeight || 24) * (1 + 0.16 * selMk.sel);
+      var bx = Math.max(12 + bw / 2, Math.min(window.innerWidth - 12 - bw / 2, selX));
+      var by = selY - th - 10;
+      blurbEl.style.transform = "translate(-50%, -100%) translate(" + bx.toFixed(1) + "px," + by.toFixed(1) + "px)";
+      blurbEl.style.opacity = smooth(0.5, 0.85, selMk.sel).toFixed(3);
+      blurbEl.classList.add("show");
     }
 
-    // ---- camera poses & flight ----
-    var OVERVIEW = { pos: new THREE.Vector3(0, 14.5, 19.5), tgt: new THREE.Vector3(0, 0.2, -2.5) };
-    var cam = {
-      pos: OVERVIEW.pos.clone(), tgt: OVERVIEW.tgt.clone(),
-      fromPos: OVERVIEW.pos.clone(), fromTgt: OVERVIEW.tgt.clone(),
-      toPos: OVERVIEW.pos.clone(), toTgt: OVERVIEW.tgt.clone(),
-      t: 1, dur: 1.25
-    };
-    function detailPose(id) {
-      var m = new THREE.Vector3().fromArray(SCENES[id].pos);
-      var aspect = window.innerWidth / window.innerHeight;
-      var narrow = aspect < 1.0 || window.innerWidth <= 760;
-      var dir = new THREE.Vector3(0, 0.62, 1).normalize();
-      var D = narrow ? 8.8 : 7.4;
-      var pos = m.clone().addScaledVector(dir, D);
-      var halfH = Math.tan(THREE.MathUtils.degToRad(BASE_FOV / 2)) * D;
-      var tgt = m.clone();
-      if (narrow) tgt.y -= halfH * 0.42;           // marker rides high, panel sits below
-      else tgt.x += halfH * aspect * 0.46;         // marker sits left, panel on the right
-      return { pos: pos, tgt: tgt };
+    // ---- camera: one home pose that turns with the formation, plus the fall ----
+    var _home = { pos: new THREE.Vector3(), tgt: new THREE.Vector3() };
+    function homePose(out) {
+      if (isNarrow()) { turnCam(0, 21.5, out.pos, 16.5); turnCam(0, -2.6, out.tgt, -3.6); }   // the system rides high above the text
+      else { turnCam(0, 20.2, out.pos, 13.2); turnCam(0, -3.4, out.tgt, 1.4); }
+      return out;
     }
-    function flyTo(id, instant) {
-      var to = id ? detailPose(id) : OVERVIEW;
-      cam.fromPos.copy(cam.pos); cam.fromTgt.copy(cam.tgt);
-      cam.toPos.copy(to.pos); cam.toTgt.copy(to.tgt);
-      cam.dur = 1.25;
-      cam.t = (instant || reduced) ? 1 : 0;
-      if (cam.t === 1) { cam.pos.copy(cam.toPos); cam.tgt.copy(cam.toTgt); }
-      return cam.t === 1 ? 0 : cam.dur;
+    var cam = { pos: new THREE.Vector3(), tgt: new THREE.Vector3(), fromPos: new THREE.Vector3(), fromTgt: new THREE.Vector3(), t: 1, dur: 1.25 };
+    homePose(_home); cam.pos.copy(_home.pos); cam.tgt.copy(_home.tgt);
+    var faller = makeFaller({ camera: camera, VIS_R: VIS_R });
+    var viaMarker = null;      // set by the pointer code right before enter(): the body that was dropped / clicked
+    var resting = false, prevMode = "idle", lastId = null, dock = 0;
+    function restoreAll() {
+      Object.keys(markers).forEach(function (id) { var m = markers[id]; m.gone = 0; m.group.visible = true; });
     }
-    function ease(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    function flyTo(id, instant, cb) {
+      var inst = !!instant || reduced;
+      if (!id) {
+        var was = faller.leave(inst);
+        if (was === "idle" || inst) {
+          homePose(_home);
+          cam.fromPos.copy(cam.pos); cam.fromTgt.copy(cam.tgt);
+          cam.dur = 1.25; cam.t = inst ? 1 : 0;
+          if (inst) { cam.pos.copy(_home.pos); cam.tgt.copy(_home.tgt); }
+        } else cam.t = 1;                       // the reverse writes the camera; the glide home starts when it lands
+        if (inst) { restoreAll(); debris.clear(); dock = 0; lineRect = null; prevMode = "idle"; }
+        return 0;
+      }
+      var mk = viaMarker && markers[viaMarker] && viaMarker === id ? markers[id] : null;
+      viaMarker = null;
+      if (mk && drag && drag.p === mk) endDrag(null);
+      if (!mk && id !== "about") mk = markers[id];          // a project entered from its card: its marker still goes
+      cam.t = 1;
+      lastId = id;
+      var kind = id === "about" ? "about" : "line";
+      var dur = faller.begin(id, kind, mk, cam.pos, cam.tgt, inst, cb);
+      if (inst && mk) { mk.gone = 1; mk.group.visible = false; dock = 1; }
+      return dur;
+    }
 
-    // ---- pointer: the horizon centre is the pointer, exactly, every frame ----
-    var pointer = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.62, has: false };
-    var ndc = new THREE.Vector2();
-    var raycaster = new THREE.Raycaster();
-    var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);   // the singularity lives on y = 0
-    var hit = new THREE.Vector3();
-    function isUI(target) {
-      return !!(target && target.closest && target.closest(".detail, .card, .back, .tag, .cards, a, button"));
+    // ---- pointer: drag a marker, tap a marker or the hole ----
+    var canvasEl = $("#scene");
+    var ndc = new THREE.Vector2(), raycaster = new THREE.Raycaster();
+    var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), _v = new THREE.Vector3(), _slot = new THREE.Vector3();
+    var drag = null, aboutTap = null, hoverId = null;
+    // background-drag for the camera's viewing angle: separate from marker-drag above. Only
+    // arms on a pointerdown over truly empty scene space (pick() returns null), and only starts
+    // actually steering the camera once the pointer has moved past a small threshold — so a
+    // plain click on empty space (which does nothing) is never mistaken for a drag.
+    var camDrag = null, camDragActive = false;
+    var CAM_DRAG_SENS = 0.0034, MAX_CAM_VEL = 6;
+    function pick(px, py) {
+      var W = window.innerWidth, H = window.innerHeight;
+      var f = (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      var best = null, bestD = 1e9;
+      Object.keys(markers).forEach(function (id) {
+        var m = markers[id];
+        if (!m.group.visible || m.gone > 0) return;
+        _proj.copy(m.group.position).project(camera);
+        if (_proj.z > 1) return;
+        var sx = (_proj.x * 0.5 + 0.5) * W, sy = (-_proj.y * 0.5 + 0.5) * H;
+        var dist = _v.subVectors(m.group.position, camera.position).length();
+        var rpx = Math.max(coarse ? 38 : 28, MARK_R * 1.2 / dist * f);
+        var d = Math.hypot(px - sx, py - sy);
+        if (d < rpx && d < bestD) { bestD = d; best = id; }
+      });
+      if (best) return best;
+      _proj.copy(hole.position).project(camera);
+      if (_proj.z <= 1) {
+        var hx = (_proj.x * 0.5 + 0.5) * W, hy = (-_proj.y * 0.5 + 0.5) * H;
+        var hd = _v.subVectors(hole.position, camera.position).length();
+        if (Math.hypot(px - hx, py - hy) < Math.max(30, VIS_R * 0.42 / hd * f)) return "hole";
+      }
+      return null;
     }
-    window.addEventListener("pointermove", function (e) {
-      if (e.pointerType === "touch" && !holding) return;
-      pointer.x = e.clientX; pointer.y = e.clientY; pointer.has = true;
-    }, { passive: true });
+    function hitPlane(px, py, out) {
+      ndc.set((px / window.innerWidth) * 2 - 1, -(py / window.innerHeight) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      return raycaster.ray.intersectPlane(plane, out);
+    }
+    // ack: the mild "not yet unlocked" acknowledgment for a placeholder station — a brief glow
+    // (reusing the existing hot-state pulse) plus a short shake, and a pulse on its floating
+    // label. Never fabricates a name/URL/description and never enters a scene.
+    var ACK_DUR = 0.5;
+    // isSelected(): the station currently reading as selected (its label carries the blurb)
+    function isSelected(id) { return frontIdNow === id && !!markers[id] && markers[id].sel > 0.5; }
+    // tapStation(): a click on a station's projected label. Returns true when it was consumed as
+    // "select this one" (the camera turns to it); false means "enter" is the caller's to do.
+    function tapStation(id) {
+      if (!markers[id] || current) return false;
+      noteInput(true);
+      if (!isSelected(id)) { faceStation(id); return true; }
+      if (PLACEHOLDER_IDS[id]) { ackPlaceholder(id); return true; }
+      return false;
+    }
+    function ackPlaceholder(id) {
+      var mk = markers[id];
+      if (!mk || !PLACEHOLDER_IDS[id]) return;
+      mk.ackUntil = time + ACK_DUR;
+      mk.hotTarget = 1;
+      setTimeout(function () { if (mk.hotTarget === 1) mk.hotTarget = 0; }, ACK_DUR * 1000);
+      var el = tagEls[id];
+      if (el) { el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse"); }
+    }
+    function endDrag(e) {
+      if (!drag) return;
+      var d = drag, p = d.p;
+      drag = null; p.drag = null;
+      setCursorDrag(false);
+      try { canvasEl.releasePointerCapture(d.pid); } catch (x) {}
+      var P = p.group.position, dist = Math.hypot(P.x, P.z);
+      var up = !!(e && e.type === "pointerup");
+      var tap = up && !d.moved && performance.now() - d.t0 < 450;
+      if (PLACEHOLDER_IDS[p.id]) {
+        // a placeholder: a tap on it while not selected turns the camera to it; a tap while
+        // selected, or a drop inside the capture ring, only acknowledges — it never enters a
+        // scene, and it always springs back to its slot like any other release.
+        if (tap && !isSelected(p.id)) faceStation(p.id);
+        else if (up && (tap || dist < R_CAP)) ackPlaceholder(p.id);
+        p.returnFrom.copy(P); p.returnT = 0;
+        return;
+      }
+      if (tap && !isSelected(p.id)) { faceStation(p.id); p.returnFrom.copy(P); p.returnT = 0; return; }   // a tap on another station: select it
+      if (tap) { viaMarker = p.id; enter(p.id); return; }                                                  // a tap on the selected project: enter
+      if (up && dist < R_CAP) { viaMarker = p.id; enter(p.id); return; }                                    // let go inside the capture ring
+      p.returnFrom.copy(P); p.returnT = 0;                                                                // let go anywhere else: back to its slot
+    }
     window.addEventListener("pointerdown", function (e) {
-      if (isUI(e.target)) return;
-      pointer.x = e.clientX; pointer.y = e.clientY; pointer.has = true;
-      setHolding(true);
+      if (skin !== "gravity" || current || isUI(e.target)) return;
+      var id = pick(e.clientX, e.clientY);
+      if (id && markers[id] && !drag) {
+        var p = markers[id];
+        drag = { p: p, pid: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: false, tgt: p.group.position.clone() };
+        p.drag = drag; p.returnT = 1;
+        setCursorDrag(true);
+        try { canvasEl.setPointerCapture(e.pointerId); } catch (x) {}
+        return;
+      }
+      if (id === "hole") { aboutTap = { pid: e.pointerId, x: e.clientX, y: e.clientY, t0: performance.now() }; return; }
+      // no marker, no hole: truly empty scene space — arm a candidate background-drag for the
+      // camera's viewing angle (not yet active; pointermove promotes it past the move threshold).
+      if (!camDrag) {
+        camDrag = { pid: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastT: performance.now(), moved: false };
+        try { canvasEl.setPointerCapture(e.pointerId); } catch (x) {}
+      }
     }, { passive: true });
-    var endHold = function () { setHolding(false); };
-    window.addEventListener("pointerup", endHold, { passive: true });
-    window.addEventListener("pointercancel", endHold, { passive: true });
-    window.addEventListener("blur", endHold);
-    window.addEventListener("contextmenu", endHold);
-    document.addEventListener("visibilitychange", function () { if (document.hidden) endHold(); });
+    window.addEventListener("pointermove", function (e) {
+      if (drag && e.pointerId === drag.pid) {
+        if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 7) drag.moved = true;
+        if (hitPlane(e.clientX, e.clientY, hit)) {
+          var L = Math.hypot(hit.x, hit.z), lim = 13;
+          if (L > lim) { hit.x *= lim / L; hit.z *= lim / L; }
+          drag.tgt.set(hit.x, ARC_Y, hit.z);
+        }
+        return;
+      }
+      if (camDrag && e.pointerId === camDrag.pid) {
+        if (!camDrag.moved && Math.hypot(e.clientX - camDrag.x0, e.clientY - camDrag.y0) > 7) camDrag.moved = true;
+        var now = performance.now();
+        if (camDrag.moved && !reduced) {
+          var dx = e.clientX - camDrag.lastX;
+          var ddt = Math.max(1 / 120, (now - camDrag.lastT) / 1000);   // floor avoids a divide-by-near-zero velocity spike on back-to-back events
+          addCamAngle(dx * CAM_DRAG_SENS);
+          var v = (dx * CAM_DRAG_SENS) / ddt;
+          camVel = Math.max(-MAX_CAM_VEL, Math.min(MAX_CAM_VEL, v));    // clamped instantaneous rate, so release carries the same feel into the decay above without ever spiking
+          camDragActive = true;
+        } else if (camDrag.moved && reduced) {
+          addCamAngle((e.clientX - camDrag.lastX) * CAM_DRAG_SENS);
+          camDragActive = true;
+        }
+        camDrag.lastX = e.clientX; camDrag.lastT = now;
+        return;
+      }
+      // continuous hover (no button held): drives the hole's discoverability glow/cursor cue,
+      // and feeds the shared cursor's hover state.
+      hoverId = (skin === "gravity" && !current && !isUI(e.target)) ? pick(e.clientX, e.clientY) : null;
+    }, { passive: true });
+    function endCamDrag(e) {
+      if (!camDrag) return;
+      try { canvasEl.releasePointerCapture(camDrag.pid); } catch (x) {}
+      camDrag = null; camDragActive = false;
+    }
+    function endPointer(e) {
+      if (drag && e.pointerId === drag.pid) endDrag(e);
+      else if (camDrag && e.pointerId === camDrag.pid) endCamDrag(e);
+      else if (aboutTap && e.pointerId === aboutTap.pid) {
+        if (e.type === "pointerup" && !current && Math.hypot(e.clientX - aboutTap.x, e.clientY - aboutTap.y) < 10 && performance.now() - aboutTap.t0 < 500) enter("about");
+        aboutTap = null;
+      }
+    }
+    window.addEventListener("pointerup", endPointer, { passive: true });
+    window.addEventListener("pointercancel", endPointer, { passive: true });
+    // wheel-browsing over the overview scene only: same guard as the hover/drag pick above, so it
+    // never fires over a detail page's own scrollable content, a card, the skin menu, or coarse
+    // pointers (no wheel emulation needed on touch) — and it's a no-op outside this skin entirely.
+    window.addEventListener("wheel", function (e) {
+      if (coarse || skin !== "gravity" || current || isUI(e.target) || drag) return;
+      var dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16; else if (e.deltaMode === 2) dy *= window.innerHeight;
+      e.preventDefault();
+      wheelBrowse(dy);
+    }, { passive: false });
+    // dropAll(): abandon every in-flight input this world owns — drags (and their pointer
+    // captures), a pending hole tap, hover, camera momentum, the held local-time state.
+    var dropAll = function () {
+      endDrag(null); endCamDrag(null); aboutTap = null; hoverId = null;
+      camVel = 0; noteInput(true);
+      holding = false; tsTarget = 1; releasedAt = extTime;
+      setCursorDrag(false); setCursorNear(0);
+    };
+    window.addEventListener("blur", dropAll);
+    window.addEventListener("contextmenu", dropAll);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) dropAll(); });
 
-    // ---- local time ----
+    // ---- the idle showcase: after IDLE_AFTER seconds with no real input on the overview, the
+    // camera slowly faces the next station along the arc, dwelling on each, and turns back at
+    // either end (a bounce, never a jump to the far end). One piece of state (idleT / showcase),
+    // advanced only by tick(dt) — no timers of its own — and dropped by noteInput() (every real
+    // input), dropAll() (deactivate / blur / hidden) and cancelTransitions() (any scene change or
+    // skin switch). It only ever writes camGoal, the same path a click on a station uses, so it
+    // can never touch focus, a marker, or the page. Off entirely under reduced motion. ----
+    var IDLE_AFTER = 8, SHOW_DWELL = 3.4;
+    var idleT = 0, showcase = null;   // showcase: { dir: +1|-1, wait: seconds until the next step } while cycling
+    function noteInput(hard) {
+      idleT = 0; showcase = null;
+      if (hard) camGoal = null;
+    }
+    function showcasePaused() {
+      return reduced || !!current || menuOpen || !!drag || !!camDrag || !!aboutTap || faller.mode() !== "idle" || resting ||
+        document.hidden || (document.hasFocus && !document.hasFocus());
+    }
+    function updateShowcase(dt) {
+      if (showcasePaused()) { idleT = 0; showcase = null; return; }
+      idleT += dt;
+      if (idleT < IDLE_AFTER) return;
+      if (!showcase) showcase = { dir: 1, wait: 0 };
+      if (camGoal !== null) return;                     // still turning: the dwell starts once it has landed
+      showcase.wait -= dt;
+      if (showcase.wait > 0) return;
+      var i = nearestSlotIndex(camAngleRaw), n = SLOT_ANGLES.length;
+      if (i + showcase.dir < 0 || i + showcase.dir >= n) showcase.dir = -showcase.dir;   // bounce at the ends
+      camGoal = SLOT_ANGLES[i + showcase.dir]; camVel = 0;
+      showcase.wait = SHOW_DWELL;
+    }
+    // every real input ends the showcase and restarts the idle count; presses / keys also release
+    // a pending camGoal so they never fight a glide in progress. Wheel is deliberately soft here:
+    // wheelBrowse() owns camGoal for its own step-by-step glide (reading whatever camGoal already
+    // is — including a stale showcase target — as the base for the next step), so a hard clear on
+    // every wheel event would wipe out the very step wheelBrowse just took on the previous event
+    // of the same gesture, before the camera had any chance to glide there.
+    window.addEventListener("pointermove", function () { noteInput(false); }, { passive: true, capture: true });
+    window.addEventListener("pointerdown", function () { noteInput(true); }, { passive: true, capture: true });
+    window.addEventListener("wheel", function () { noteInput(false); }, { passive: true, capture: true });
+    window.addEventListener("touchstart", function () { noteInput(true); }, { passive: true, capture: true });
+    window.addEventListener("keydown", function () { noteInput(true); }, { capture: true });
+
+    // ---- local time: driven by proximity to the hole, not by holding the pointer down ----
     var HOLD_SCALE = 6.0;
     var ts = 1, tsTarget = 1, holding = false, releasedAt = -10;
     var extTime = 0, locTime = 0;
     var clocksEl = $("#clocks"), clockExt = $("#clock-ext"), clockLoc = $("#clock-loc"), clockRate = $("#clock-rate");
-    function setHolding(v) {
-      if (holding === v) return;
-      holding = v;
-      tsTarget = v ? HOLD_SCALE : 1;
-      if (!v) releasedAt = extTime;
-    }
+    // ---- proximity: continuous, always-on local-time boost the closer the pointer sits to the
+    // hole's actual projected position — never the real/external clock, never navigation. ----
+    var aboutHotUI = 0;
+    var PROX_NEAR = 1.05, PROX_FAR = 4.5;      // × the hole's on-screen apparent radius: full at the rim, nothing beyond 4.5 radii
+    var holeRpx = 40;                          // recomputed every frame below; seeded here
     function fmt(t) {
       var m = Math.floor(t / 60), s = t - m * 60;
       return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s.toFixed(2);
@@ -878,30 +2712,41 @@
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      if (current) {                       // keep the marker/panel layout right after rotation
-        var to = detailPose(current);
-        cam.fromPos.copy(cam.pos); cam.fromTgt.copy(cam.tgt);
-        cam.toPos.copy(to.pos); cam.toTgt.copy(to.tgt);
-        cam.dur = 0.6; cam.t = reduced ? 1 : 0;
-        if (reduced) { cam.pos.copy(to.pos); cam.tgt.copy(to.tgt); }
-      }
     }
     resize();
     window.addEventListener("resize", resize);
 
     // ---- frame ----
-    var clock = new THREE.Clock();
-    var drift = 0, phase = 0, ripple = 0, rippleAmp = 0, driftT = 0;
+    var drift = 0, phase = 0, ripple = 0, rippleAmp = 0, driftT = 0, lastBo = -1, time = 0;
     var _drift = new THREE.Vector3();
-    var hotScale = new THREE.Vector3();
+    var M = { x: 0, y: 0, r: 30 }, Hc = { x: 0, y: 0 };
+    var lineEl = null, frontIdNow = null;
+    // lineRect: the page line's slot as last measured while the page was up. Kept through the
+    // reverse so the line un-docks from the very same slot as dock runs back to 0 (the page is
+    // already fading out, so the element can no longer be trusted); cleared once the fall is idle.
+    var lineRect = null;
 
-    function approach(cur, target, tau, dt) { return cur + (target - cur) * (1 - Math.exp(-dt / tau)); }
-
-    function frame() {
-      var dt = Math.min(clock.getDelta(), 0.05);
+    // tick(dt): one frame of this world. Scheduled by the page's single frame loop (Loop) only
+    // while 引力 is the skin on screen — never by this world itself.
+    function tick(dt) {
       var anim = reduced ? 0 : dt;                        // ambient motion is off under reduced motion
+      time += dt;
+
+      // proximity: how close the pointer sits to the hole's projected core, 0 (far) .. 1 (at the
+      // rim). It drives local time and the cursor ring's "drawing in" — and nothing else: About is
+      // entered only by an actual click/tap on the hole (or its card), never by nearness. Uses
+      // last frame's projected hole position/size (one frame of lag, invisible at frame rate).
+      var proxT = 0;
+      if (!current && mouse.active && !mouse.overUI && !drag) {
+        proxT = 1 - smooth(holeRpx * PROX_NEAR, holeRpx * PROX_FAR, Math.hypot(mouse.x - Hc.x, mouse.y - Hc.y));
+      }
+      setCursorNear(proxT);
+      aboutHotT = Math.max(aboutHotUI, hoverId === "hole" ? 1 : 0);
 
       // local time
+      tsTarget = 1 + (HOLD_SCALE - 1) * proxT;
+      var holdingNow = proxT > 0.02;
+      if (holdingNow !== holding) { holding = holdingNow; if (!holding) releasedAt = extTime; }
       ts = approach(ts, tsTarget, holding ? 0.20 : 0.32, reduced ? 1 : dt);
       if (Math.abs(ts - tsTarget) < 0.003) ts = tsTarget;
       var boost = (ts - 1) / (HOLD_SCALE - 1);
@@ -909,58 +2754,161 @@
       locTime += dt * ts;
       var localDt = anim * ts;
 
-      // camera flight
-      if (cam.t < 1) {
-        cam.t = Math.min(1, cam.t + dt / cam.dur);
-        var e = ease(cam.t);
-        cam.pos.lerpVectors(cam.fromPos, cam.toPos, e);
-        cam.tgt.lerpVectors(cam.fromTgt, cam.toTgt, e);
+      // camera
+      var fm = faller.update(dt, cam.pos, cam.tgt);
+      var vis = faller.vis;
+      if (fm === "idle" && prevMode !== "idle") {          // the reverse just landed: glide home, reassemble
+        homePose(_home);
+        cam.fromPos.copy(cam.pos); cam.fromTgt.copy(cam.tgt); cam.dur = 1.1; cam.t = 0;
+        var back = lastId && markers[lastId];
+        if (back) { back.gone = 0; back.group.visible = true; back.returnFrom.copy(back.group.position); back.returnT = 0; }
+        debris.clear();
       }
+      prevMode = fm;
+      if (fm === "idle") {
+        homePose(_home);
+        if (cam.t < 1) {
+          cam.t = Math.min(1, cam.t + dt / cam.dur);
+          var e = ease(cam.t);
+          cam.pos.lerpVectors(cam.fromPos, _home.pos, e);
+          cam.tgt.lerpVectors(cam.fromTgt, _home.tgt, e);
+        } else { cam.pos.copy(_home.pos); cam.tgt.copy(_home.tgt); }
+      } else cam.t = 1;
       drift = approach(drift, current ? 0 : 1, 0.6, dt);
       driftT += anim * 0.12;
       _drift.set(Math.sin(driftT) * 0.9, Math.sin(driftT * 0.7) * 0.35, Math.cos(driftT * 0.8) * 0.5).multiplyScalar(reduced ? 0 : drift);
       camera.position.copy(cam.pos).add(_drift);
+      camera.up.set(Math.sin(vis.roll), Math.cos(vis.roll), 0);
       camera.lookAt(cam.tgt);
-      var fov = BASE_FOV + 3.5 * boost;
-      if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      camera.fov = BASE_FOV + 3.5 * boost + vis.fov;
+      camera.updateProjectionMatrix();
       camera.updateMatrixWorld();
+      var fb = Math.max(boost, vis.boost), rush = 1 + 4 * vis.boost;   // everything runs faster as you fall
 
-      // singularity under the pointer, computed against the camera as it is *this* frame
-      if (pointer.has) {
-        ndc.set((pointer.x / window.innerWidth) * 2 - 1, -(pointer.y / window.innerHeight) * 2 + 1);
-        raycaster.setFromCamera(ndc, camera);
-        if (raycaster.ray.intersectPlane(plane, hit)) hole.position.copy(hit);
+      // the formation turns only while nothing is falling, so a reversed fall lands where it left
+      if (fm === "idle") formAng += OMEGA * localDt;
+
+      // camera browsing: a damped/inertial spin of the CAMERA's viewing angle around the hole,
+      // fed by the wheel and by dragging the empty background — independent of the markers'
+      // own orbital motion (formAng, above). This is what makes one of them read as "directly
+      // above" the hole as the visitor scrolls or drags: the viewpoint turns, not the markers.
+      // Once the input and its momentum are spent, the angle settles onto the nearest slot (a
+      // carousel detent); from beyond either end it springs back to that end instead. All of
+      // this touches camAngle(Raw) only — slotOf/turn never see it.
+      if (!reduced) {
+        if (camVel !== 0) addCamAngle(camVel * dt);
+        camVel = approach(camVel, 0, CAM_DECAY, dt);
+        if (Math.abs(camVel) < CAM_SETTLE_EPS) camVel = 0;
+        if (camDragActive) camGoal = null;
+        if (camGoal !== null && Math.abs(camAngleRaw - camGoal) < CAM_GOAL_EPS) { camAngleRaw = camGoal; camGoal = null; }
+        if (camGoal !== null) {
+          // a station was asked for directly: one continuous glide onto it, whatever the distance
+          camAngleRaw = approach(camAngleRaw, camGoal, CAM_GOAL_TAU, dt);
+          camAngle = rubberBand(camAngleRaw);
+        } else if (!camDragActive && Math.abs(camVel) < CAM_DETENT_VEL) {
+          var beyond = camAngleRaw < CAM_LIMIT_MIN || camAngleRaw > CAM_LIMIT_MAX;
+          var settleTo = beyond ? (camAngleRaw < CAM_LIMIT_MIN ? CAM_LIMIT_MIN : CAM_LIMIT_MAX) : SLOT_ANGLES[nearestSlotIndex(camAngleRaw)];
+          camAngleRaw = approach(camAngleRaw, settleTo, beyond ? CAM_SPRING_TAU : CAM_DETENT_TAU, dt);
+          camAngle = rubberBand(camAngleRaw);
+        }
+      } else if (!camDragActive) {
+        setCamAngle(SLOT_ANGLES[nearestSlotIndex(camAngleRaw)]);   // reduced motion: rest exactly on a slot, no glide
       }
-      hole.quaternion.copy(camera.quaternion);
+      updateShowcase(dt);
+      updateSpread();   // from last frame's selection weights; the position pass below reads it
 
       // field
-      gridU.uHole.value.copy(hole.position);
-      gridU.uStrength.value = 3.0 + 0.8 * boost;
-      gridU.uBoost.value = boost;
-      ripple += localDt * 3.4;
-      rippleAmp = approach(rippleAmp, reduced ? 0 : 0.05 + 0.42 * boost, 0.25, dt);
+      gridU.uStrength.value = 3.0 + 0.8 * boost + 2.5 * vis.boost;
+      gridU.uBoost.value = fb;
+      ripple += localDt * 3.4 * rush;
+      rippleAmp = approach(rippleAmp, reduced ? 0 : 0.05 + 0.42 * fb, 0.25, dt);
       gridU.uRipple.value = ripple;
       gridU.uRippleAmp.value = rippleAmp;
+      gridU.uDim.value = 1;
 
       // singularity
-      phase += localDt * 1.1;
+      phase += localDt * 1.1 * rush;
       holeU.uPhase.value = phase;
-      holeU.uBoost.value = boost;
-      updateMatter(localDt, ts, boost);
+      holeU.uBoost.value = Math.min(1, fb + 0.3 * aboutHot);
+      hole.quaternion.copy(camera.quaternion);
+      updateMatter(localDt * rush, ts * rush, fb);
 
-      // markers
+      // markers in formation: position pass first (each marker's own state only)
+      var falling = faller.marker();
+      Object.keys(markers).forEach(function (id) {
+        var mk = markers[id], P = mk.group.position;
+        if (mk === falling) {
+          mk.gone = smooth(0.04, 0.3, vis.t);
+          mk.group.visible = mk.gone < 0.999;
+        } else if (mk.drag) {
+          P.lerp(mk.drag.tgt, 1 - Math.exp(-dt / 0.06));
+        } else {
+          slotOf(id, _slot);
+          if (mk.returnT < 1) { mk.returnT = Math.min(1, mk.returnT + dt / 0.9); P.lerpVectors(mk.returnFrom, _slot, easeOut(mk.returnT)); }
+          else P.copy(_slot);
+        }
+        // placeholder "not yet unlocked" acknowledgment: a brief decaying shake on top of its
+        // slot position — never moves a real project's marker, never touches camAngle/formAng.
+        if (!reduced && PLACEHOLDER_IDS[id] && mk.ackUntil && time < mk.ackUntil) {
+          var ackT = (mk.ackUntil - time) / ACK_DUR;
+          P.x += Math.sin(time * 46) * 0.09 * ackT;
+        }
+      });
+      // focus/emphasis: whichever visible marker is actually screen-aligned above the hole from
+      // the CURRENT camera angle gets it — computed fresh each frame from real projected screen
+      // positions (camera + hole + marker), never from a fixed world-x/theta check or the wheel
+      // value directly. That keeps it correct as the camera browses independently of the markers,
+      // after resize, and at high DPI, and guarantees at most one marker (the nearer, visible one)
+      // is ever picked even if two ever land screen-colinear front/back.
+      _proj.copy(hole.position).project(camera);
+      var holeNdcX = _proj.x;
+      var frontId = null, frontD = Infinity;
       Object.keys(markers).forEach(function (id) {
         var mk = markers[id];
-        mk.hotTarget = (current === id) ? 1 : mk.hotTarget;
-        mk.hot = approach(mk.hot, mk.hotTarget, 0.25, dt);
-        var s = 1 + 0.18 * mk.hot;
-        mk.group.scale.set(s, s, s);
-        for (var j = 0; j < mk.mats.length; j++) mk.mats[j].m.opacity = Math.min(1, mk.mats[j].base * (1 + 0.35 * mk.hot));
-        if (mk.parts.spin) mk.parts.spin.rotation.y += anim * (0.25 + 0.5 * mk.hot);
-        if (mk.parts.ring) mk.parts.ring.rotation.z += anim * 0.35;
-        if (mk.parts.circle) mk.parts.circle.rotation.y -= anim * 0.2;
-        mk.group.position.y = SCENES[id].pos[1] + Math.sin(driftT * 4 + id.length) * 0.06 * (1 - reduced);
+        if (mk === falling || !mk.group.visible) return;
+        _proj.copy(mk.group.position).project(camera);
+        if (_proj.z >= 1) return;                       // behind the camera / clipped: never a candidate
+        var d = Math.abs(_proj.x - holeNdcX);
+        if (d < frontD) { frontD = d; frontId = id; }
       });
+      frontIdNow = frontId;
+      Object.keys(markers).forEach(function (id) {
+        var mk = markers[id], P = mk.group.position;
+        mk.hotTarget = current === id ? 1 : mk.hotTarget;
+        mk.hot = approach(mk.hot, mk.hotTarget, 0.25, dt);
+        var near = mk.drag ? smooth(7, R_CAP, Math.hypot(P.x, P.z)) : 0;
+        // gentle magnetic-feeling focus: whichever station currently sits screen-aligned above
+        // the hole reads as very slightly larger — subtle, and a snap (not a glide) under
+        // reduced motion, matching how its own driving angle already snaps rather than gliding.
+        mk.front = (mk === falling || id !== frontId) ? 0 : smooth(FRONT_NDC_RANGE, 0, frontD);
+        // sel: the smoothed selection weight — what the label, the blurb, the neighbour push and
+        // the marker's own emphasis all read, so they move together and never pop
+        mk.sel = reduced ? mk.front : approach(mk.sel, mk.front, 0.18, dt);
+        var s = (1 + 0.18 * mk.hot + 0.12 * near + 0.32 * mk.sel) * (1 + 0.5 * mk.gone);
+        mk.group.scale.set(s, s, s);
+        var op = (1 - mk.gone) * (1 + 0.35 * mk.hot + 0.5 * near + 0.45 * mk.sel);
+        for (var j = 0; j < mk.mats.length; j++) mk.mats[j].m.opacity = Math.min(1, mk.mats[j].base * op);
+        var spin = anim * (0.25 + 0.5 * mk.hot + 2.5 * near);
+        if (mk.parts.spin) mk.parts.spin.rotation.y += spin;
+        if (mk.parts.ring) mk.parts.ring.rotation.z += anim * 0.35 + spin * 0.4;
+        if (mk.parts.circle) mk.parts.circle.rotation.y -= anim * 0.2 + spin * 0.3;
+        if (!mk.drag && mk !== falling) P.y = ARC_Y + Math.sin(driftT * 4 + id.length) * 0.06 * (reduced ? 0 : 1);
+      });
+      capRing.material.opacity = approach(capRing.material.opacity, drag ? 0.5 : 0, 0.2, dt);
+      aboutHot = approach(aboutHot, aboutHotT, 0.25, dt);
+
+      // sky
+      _proj.copy(hole.position).project(camera);
+      Hc.x = (_proj.x * 0.5 + 0.5) * window.innerWidth; Hc.y = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
+      // cached for next frame's proximity read: the hole's actual apparent on-screen radius,
+      // same formula pick() uses for its own hit-test, so hover/trigger/visual all agree
+      var holeD = _v.subVectors(hole.position, camera.position).length();
+      var holeF = (window.innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      holeRpx = Math.max(30, VIS_R * 0.42 / holeD * holeF);
+      streakU.uHole.value.set(_proj.x, _proj.y);
+      streakU.uWarp.value = 0.4 * boost;
+      fallStars.set(vis.streamT, vis.stream);
+      setIris(vis.iris, Hc.x, Hc.y);
 
       // clocks readout, anchored beside the singularity
       var showClocks = holding || (extTime - releasedAt) < 1.6;
@@ -969,37 +2917,448 @@
         clockExt.textContent = fmt(extTime);
         clockLoc.textContent = fmt(locTime);
         clockRate.textContent = "× " + ts.toFixed(2);
-        _proj.copy(hole.position).project(camera);
-        var sx = (_proj.x * 0.5 + 0.5) * window.innerWidth;
-        var sy = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
         var w = clocksEl.offsetWidth || 150, hgt = clocksEl.offsetHeight || 60;
-        var ox = sx + 34, oy = sy - hgt - 22;
-        if (ox + w > window.innerWidth - 12) ox = sx - 34 - w;
-        if (oy < 60) oy = sy + 30;
+        var ox = Hc.x + VIS_R * 14, oy = Hc.y - hgt - 22;
+        if (ox + w > window.innerWidth - 12) ox = Hc.x - 34 - w;
+        if (oy < 60) oy = Hc.y + 30;
         clocksEl.style.transform = "translate(" + ox.toFixed(1) + "px," + oy.toFixed(1) + "px)";
       }
 
-      updateTags();
-      renderer.render(scene, camera);
-      requestAnimationFrame(frame);
-    }
+      var bo = vis.blackout;
+      if (bo !== lastBo) { lastBo = bo; blackoutEl.style.opacity = bo.toFixed(3); }
 
-    // first frame, then lift the veil
-    frame();
+      // the debris and its wake: from the marker's own screen position into the hole, then the line
+      var dockT = fm === "crossed" ? 1 : 0;
+      dock = reduced ? dockT : approach(dock, dockT, dockT ? 0.3 : 0.2, dt);   // the un-dock spans the page's own fade-out, so the line leaves its slot as gently as it arrived
+      if (fm !== "idle" && falling) {
+        _proj.copy(falling.group.position).project(camera);
+        M.x = (_proj.x * 0.5 + 0.5) * window.innerWidth; M.y = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
+        var md = _v.subVectors(falling.group.position, camera.position).length();
+        M.r = Math.max(14, MARK_R * 0.7 / md * (window.innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+        if (faller.kind() === "line" && document.body.classList.contains("horizon-on")) {
+          if (!lineEl || !lineEl.isConnected) lineEl = $("#hz-project .hz-line");
+          if (lineEl) {
+            var rc = lineEl.getBoundingClientRect();
+            if (rc.width || rc.height) lineRect = { left: rc.left, top: rc.top, right: rc.right, bottom: rc.bottom, width: rc.width, height: rc.height };
+          }
+        }
+        debris.draw({ id: falling.id, t: vis.t, dir: faller.dir(), M: M, Hc: Hc, kind: faller.kind(), rect: dock > 0.0005 ? lineRect : null, dock: dock, time: time });
+      } else { debris.clear(); if (fm === "idle") lineRect = null; }
+
+      updateTags();
+      if (!resting) renderer.render(scene, camera);
+    }
+    var aboutHot = 0, aboutHotT = 0;
+
+    // one frame now, so the canvas is filled before the veil lifts; the loop itself is started
+    // by Loop.set() in the bootstrap, and only if 引力 is the skin on screen
+    tick(0);
     veil.classList.add("hidden");
 
     return {
+      name: "gravity",
+      tick: tick,
       flyTo: flyTo,
-      setHot: function (id, on) { if (markers[id]) markers[id].hotTarget = on ? 1 : 0; }
+      setHot: function (id, on) {
+        if (markers[id]) markers[id].hotTarget = on ? 1 : 0;
+        if (id === "about") aboutHotUI = on ? 1 : 0;
+      },
+      ackPlaceholder: ackPlaceholder,
+      tapStation: tapStation,
+      faceStation: faceStation,
+      cancel: function () { noteInput(true); },     // cancelTransitions(): the showcase and any pending turn end here too
+      rest: function (on) { resting = !!on; },    // beyond the horizon: the page is opaque, only the line needs drawing
+      // lifecycle, called by Loop.set(): activate() right before this world starts ticking,
+      // deactivate() right after it stops. Every piece of in-flight input (drags and their pointer
+      // captures, a pending tap, hover, camera momentum) and every overlay this world drove is
+      // released in deactivate(), so nothing of it can leak into the next skin.
+      activate: function () {
+        resting = false;
+        canvasPick = pick;
+        lastBo = -1; lastIris = -1;   // the other world may have left its own black behind
+      },
+      deactivate: function () {
+        resting = false; dropAll(); debris.clear(); canvasPick = null;
+        lastBo = -1; blackoutEl.style.opacity = "0"; setIris(1, 0, 0);   // leave no cut-to-black behind
+      },
+      debug: function () {
+        return { camAngle: camAngle, camAngleRaw: camAngleRaw, camVel: camVel, formAng: formAng, front: frontIdNow, hole: [Hc.x, Hc.y], holeRpx: holeRpx,
+          fall: faller.mode(), fallT: faller.t(), fallId: faller.id(), drag: drag ? drag.p.id : null, camDrag: !!camDrag, resting: resting,
+          dock: dock, line: debris.last(), lineRect: lineRect ? [lineRect.left, lineRect.top, lineRect.width, lineRect.height] : null,
+          camGoal: camGoal, idleT: idleT, showcase: showcase ? { dir: showcase.dir, wait: showcase.wait } : null,
+          selected: frontIdNow && markers[frontIdNow].sel > 0.5 ? frontIdNow : null, blurb: blurbEl ? blurbEl.textContent : null,
+          sel: Object.keys(markers).reduce(function (o, k) { o[k] = +markers[k].sel.toFixed(3); return o; }, {}),
+          spread: Object.keys(spread).reduce(function (o, k) { o[k] = +spread[k].toFixed(4); return o; }, {}),
+          dist: Object.keys(markers).reduce(function (o, k) { var P = markers[k].group.position; o[k] = +Math.hypot(P.x, P.z).toFixed(4); return o; }, {}) };
+      }
     };
   }
 
-  try { world = createWorld(); } catch (e) { world = null; }
+  // ---------------------------------------------------------------- 轨道 world
+  // The black hole is 关于; three distinct bodies orbit it, one per scene. Every visual
+  // "warp" cue is a plain function of how close the camera is to the hole — never a
+  // physical claim, just: nearer means more smeared, faster, more drawn-in. Choosing a
+  // body flies the camera alongside it and keeps following it round; only the hole itself
+  // is a fall.
+  function createOrbitWorld(renderer) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var scene = new THREE.Scene();
+    var BASE_FOV = 46;
+    var camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 700);
+    var WORLD_UP = new THREE.Vector3(0, 1, 0);
+    var ORIGIN = new THREE.Vector3(0, 0, 0);
+
+    // ---- stars all around, each with a streak that is pulled toward the hole as the warp rises ----
+    var stars = buildStars(scene, coarse ? 1300 : 2400, function (q) {
+      var r = 230 + Math.random() * 120, th = Math.random() * Math.PI * 2, ph = Math.acos(1 - Math.random() * 2);
+      q[0] = r * Math.sin(ph) * Math.cos(th); q[1] = r * Math.cos(ph); q[2] = r * Math.sin(ph) * Math.sin(th);
+    }, 1.3);
+    var streakU = stars.streakU;
+
+    // ---- the singularity at the origin: the same object (and same matter/physics scale) as the
+    // gravity skin's, but rendered ~2.7x larger so the horizon reads as an unmistakable centerpiece —
+    // visual size only, decoupled from HOLE_R so the matter/orbit system doesn't inherit the growth ----
+    var sg = buildSingularity(scene, camera, dpr, 2.1, 3.4);
+    var hole = sg.hole, holeU = sg.holeU, VIS_R = sg.VIS_R;
+    var fallStars = buildFallStars(scene, camera);
+
+    // Orbit radii/sizes as originally tuned; only ideator's radius is pushed out a bit so its
+    // orbit clears the enlarged (but decoupled) horizon's rendered disk footprint.
+    var PLANET_DEFS = {
+      ideator: { r: 9.6,  size: 0.34, a0: 0.9, colA: 0xe6f1ff, colB: 0x8fbef0, bands: 0 },
+      faith:   { r: 8.6,  size: 0.48, a0: 3.1, colA: 0xd6e6f7, colB: 0x7ea3cf, bands: 0 },
+      blog:    { r: 12.4, size: 0.66, a0: 5.0, colA: 0xeef5ff, colB: 0x5f86b8, bands: 11 }
+    };
+    var TRAIL_N = 48;
+    function makeTrail() {
+      var g = new THREE.BufferGeometry();
+      var pos = new Float32Array(TRAIL_N * 3), col = new Float32Array(TRAIL_N * 3);
+      g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+      var line = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+      line.frustumCulled = false;
+      scene.add(line);
+      return { geo: g, pos: pos, col: col };
+    }
+    var planets = {};
+    Object.keys(PLANET_DEFS).forEach(function (id) {
+      var def = PLANET_DEFS[id], p = buildPlanet(scene, id, def);
+      p.trail = makeTrail();
+      p.omega = 0.5 / Math.pow(def.r / 5.4, 1.5);   // Keplerian: inner orbits faster
+      planets[id] = p;
+      var pts = [];
+      for (var k = 0; k <= 180; k++) { var t = k / 180 * Math.PI * 2; pts.push(Math.cos(t) * def.r, 0, Math.sin(t) * def.r); }
+      var og = new THREE.BufferGeometry();
+      og.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+      scene.add(new THREE.LineLoop(og, lineMat(0.13)));
+    });
+    function updateTrail(p, warp) {
+      // inner planets smear more to begin with; everything smears further as the camera nears the hole
+      var span = (0.30 + 0.9 / (p.def.r / 5.4)) * (1 + 4.5 * warp);
+      var pos = p.trail.pos, col = p.trail.col;
+      for (var k = 0; k < TRAIL_N; k++) {
+        var f = k / (TRAIL_N - 1), a = p.ang - span * f, o = k * 3;
+        pos[o] = Math.cos(a) * p.def.r; pos[o + 1] = 0; pos[o + 2] = Math.sin(a) * p.def.r;
+        var b = (1 - f) * (1 - f) * (0.35 + 0.65 * warp) * 0.95 + (1 - f) * 0.08;
+        col[o] = (0.45 + 0.45 * (1 - f)) * b; col[o + 1] = (0.65 + 0.3 * (1 - f)) * b; col[o + 2] = b;
+      }
+      p.trail.geo.attributes.position.needsUpdate = true;
+      p.trail.geo.attributes.color.needsUpdate = true;
+    }
+
+    // ---- projected tags (the same label elements the gravity skin uses) ----
+    var tagEls = {};
+    $$(".tag").forEach(function (t) { tagEls[t.dataset.scene] = t; });
+    var _proj = new THREE.Vector3();
+    function updateTags() {
+      var inDetail = !!current;
+      Object.keys(tagEls).forEach(function (id) {
+        var el = tagEls[id];
+        if (inDetail) { el.classList.remove("show"); return; }
+        if (id === "about") { _proj.copy(hole.position); _proj.y += VIS_R * 0.69; }   // clears the bigger disk
+        else if (planets[id]) { _proj.copy(planets[id].group.position); _proj.y += planets[id].def.size * 2.2 + 0.25; }
+        else { el.classList.remove("show"); return; }
+        _proj.project(camera);
+        var ok = _proj.z < 1 && Math.abs(_proj.x) < 1.05 && Math.abs(_proj.y) < 1.05;
+        el.classList.toggle("show", ok);
+        if (ok) {
+          var sx = (_proj.x * 0.5 + 0.5) * window.innerWidth;
+          var sy = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
+          el.style.transform = "translate(-50%, -100%) translate(" + sx.toFixed(1) + "px," + sy.toFixed(1) + "px)";
+        }
+      });
+    }
+
+    // ---- camera poses: evaluated fresh every frame, so a followed planet stays followed ----
+    var EL = 0.36;                               // elevation ~20°: the orbits foreshorten like the disk's tilt
+    var DFAR = 36, DNEAR = 4.4;                  // the camera-to-hole distances that map to warp 0 and 1
+    var OVERVIEW_NEAR = 10.5;                    // overview slider's closest distance
+    var approachV = 0.18;                        // the visitor's chosen overview distance, 0 = far, 1 = near
+    var _pose = { pos: new THREE.Vector3(), tgt: new THREE.Vector3() };
+    var _r = new THREE.Vector3(), _t = new THREE.Vector3(), _dir = new THREE.Vector3(), _right = new THREE.Vector3(), _upv = new THREE.Vector3(), _v = new THREE.Vector3();
+    function overviewPose(out) {
+      var D = DFAR - (DFAR - OVERVIEW_NEAR) * approachV;
+      if (isNarrow()) D *= 1.35;
+      out.pos.set(0, D * Math.sin(EL), D * Math.cos(EL));
+      out.tgt.set(0, -0.045 * D, 0);            // the system rides above the text at the bottom
+      return out;
+    }
+    function frameOffset(P, D, out) {            // shift the look target so the body sits beside / above its panel
+      _dir.subVectors(P, out.pos).normalize();
+      _right.crossVectors(_dir, WORLD_UP).normalize();
+      _upv.crossVectors(_right, _dir).normalize();
+      var halfH = Math.tan(THREE.MathUtils.degToRad(BASE_FOV / 2)) * D;
+      out.tgt.copy(P);
+      if (isNarrow()) out.tgt.addScaledVector(_upv, -halfH * 0.42);
+      else out.tgt.addScaledVector(_right, halfH * (window.innerWidth / window.innerHeight) * 0.46);
+    }
+    function followPose(p, out) {
+      var P = p.group.position;
+      _r.set(P.x, 0, P.z).normalize();           // outward
+      _t.set(-_r.z, 0, _r.x);                    // direction of travel
+      var D = (3.4 + p.def.size * 3.2) * (isNarrow() ? 1.3 : 1);
+      _v.copy(_r).multiplyScalar(0.62).addScaledVector(WORLD_UP, 0.42).addScaledVector(_t, -0.62).normalize();
+      out.pos.copy(P).addScaledVector(_v, D);    // outside, above and just behind the planet: the hole stays in frame
+      frameOffset(P, D, out);
+      return out;
+    }
+    var cam = { pos: new THREE.Vector3(), tgt: new THREE.Vector3(), fromPos: new THREE.Vector3(), fromTgt: new THREE.Vector3(), t: 1, dur: 1.35, id: null };
+    overviewPose(_pose); cam.pos.copy(_pose.pos); cam.tgt.copy(_pose.tgt);
+    function targetPose(out) {
+      if (cam.id && planets[cam.id]) return followPose(planets[cam.id], out);
+      return overviewPose(out);
+    }
+    var faller = makeFaller({ camera: camera, VIS_R: VIS_R });
+    var prevMode = "idle";
+    function glide(inst) {
+      cam.fromPos.copy(cam.pos); cam.fromTgt.copy(cam.tgt);
+      cam.dur = 1.35; cam.t = inst ? 1 : 0;
+      if (inst) { targetPose(_pose); cam.pos.copy(_pose.pos); cam.tgt.copy(_pose.tgt); }
+    }
+    function flyTo(id, instant, cb) {
+      var inst = !!instant || reduced;
+      if (!id) {
+        var was = faller.leave(inst);
+        cam.id = null;
+        if (was === "idle" || inst) { glide(inst); if (inst) prevMode = "idle"; }
+        else cam.t = 1;                       // the reverse writes the camera; the glide out starts when it lands
+        return 0;
+      }
+      if (id === "about") { cam.id = null; cam.t = 1; return faller.begin("about", "about", null, cam.pos, cam.tgt, inst, cb); }
+      if (!planets[id]) return 0;
+      // a planet: the plain glide alongside it; from then on the pose tracks it round its orbit
+      var wasFalling = faller.leave(inst) !== "idle";
+      cam.id = id;
+      if (wasFalling && !inst) { cam.t = 1; return 1.35; }   // the reverse first, then the glide picks up
+      glide(inst);
+      return inst ? 0 : cam.dur;
+    }
+
+    // ---- the visitor's distance control: slider, wheel, pinch — all the same value ----
+    var distEl = $("#o-dist"), pctEl = $("#o-warp-pct"), fillEl = $("#o-meter-fill");
+    function setApproach(v, fromSlider) {
+      approachV = Math.min(1, Math.max(0, v));
+      if (!fromSlider) distEl.value = Math.round(approachV * 100);
+    }
+    distEl.value = Math.round(approachV * 100);
+    distEl.addEventListener("input", function () { setApproach(distEl.value / 100, true); });
+    window.addEventListener("wheel", function (e) {
+      if (skin !== "orbit" || current || isUI(e.target)) return;
+      e.preventDefault();
+      setApproach(approachV - e.deltaY * 0.0012);
+    }, { passive: false });
+
+    // ---- tap / click a body (screen-space hit test with comfortable radii), two-finger pinch ----
+    var tap = null, pinch = null, touches = {};
+    function touchDist() {
+      var ids = Object.keys(touches);
+      return Math.hypot(touches[ids[0]].x - touches[ids[1]].x, touches[ids[0]].y - touches[ids[1]].y);
+    }
+    function pick(px, py) {
+      var best = null, bestD = 1e9, W = window.innerWidth, H = window.innerHeight;
+      var f = (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      var cands = [{ id: "about", P: hole.position, R: VIS_R * 0.62 }];
+      Object.keys(planets).forEach(function (id) { cands.push({ id: id, P: planets[id].group.position, R: planets[id].def.size * 2.6 }); });
+      cands.forEach(function (c) {
+        _proj.copy(c.P).project(camera);
+        if (_proj.z > 1) return;
+        var sx = (_proj.x * 0.5 + 0.5) * W, sy = (-_proj.y * 0.5 + 0.5) * H;
+        var dist = _v.subVectors(c.P, camera.position).length();
+        var rpx = Math.max(coarse ? 34 : 24, c.R / dist * f);
+        var d = Math.hypot(px - sx, py - sy);
+        if (d < rpx && d < bestD) { bestD = d; best = c.id; }
+      });
+      return best;
+    }
+    window.addEventListener("pointerdown", function (e) {
+      if (skin !== "orbit" || isUI(e.target)) return;
+      if (e.pointerType === "touch") {
+        touches[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(touches).length === 2) { pinch = { d0: touchDist(), v0: approachV }; tap = null; return; }
+      }
+      tap = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+    }, { passive: true });
+    window.addEventListener("pointermove", function (e) {
+      if (skin !== "orbit" || e.pointerType !== "touch" || !touches[e.pointerId]) return;
+      touches[e.pointerId].x = e.clientX; touches[e.pointerId].y = e.clientY;
+      if (pinch && Object.keys(touches).length === 2 && !current) setApproach(pinch.v0 + (touchDist() - pinch.d0) / 260);
+    }, { passive: true });
+    function endPointer(e) {
+      if (e.pointerType === "touch") {
+        delete touches[e.pointerId];
+        if (Object.keys(touches).length < 2) pinch = null;
+      }
+      if (skin !== "orbit") { tap = null; return; }
+      if (tap && e.type === "pointerup" && e.pointerId === tap.id) {
+        var moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y);
+        if (moved < 10 && performance.now() - tap.t < 500 && !current) {
+          var id = pick(e.clientX, e.clientY);
+          if (id) enter(id);
+        }
+      }
+      tap = null;
+    }
+    window.addEventListener("pointerup", endPointer, { passive: true });
+    window.addEventListener("pointercancel", endPointer, { passive: true });
+
+    // ---- resize ----
+    function resize() {
+      var w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    // ---- frame ----
+    var resting = false, drift = 0, driftT = 0, warp = 0, lastPct = -1, aboutHot = 0, aboutHotT = 0, lastBo = -1;
+    var _drift = new THREE.Vector3();
+    // tick(dt): one frame of this world, scheduled by the page's single frame loop (Loop) only
+    // while 轨道 is on screen. Beyond the horizon (resting) there is nothing to draw behind the page.
+    function tick(dt) {
+      if (resting) return;
+      var anim = reduced ? 0 : dt;
+
+      // camera: the destination is re-evaluated every frame, so a followed planet keeps being followed;
+      // the fall into the hole takes the camera over, and its reverse hands it back where it left
+      targetPose(_pose);
+      var fm = faller.update(dt, cam.pos, cam.tgt);
+      var vis = faller.vis;
+      if (fm === "idle" && prevMode !== "idle") glide(false);
+      prevMode = fm;
+      if (fm === "idle") {
+        if (cam.t < 1) {
+          cam.t = Math.min(1, cam.t + dt / cam.dur);
+          var e = ease(cam.t);
+          cam.pos.lerpVectors(cam.fromPos, _pose.pos, e);
+          cam.tgt.lerpVectors(cam.fromTgt, _pose.tgt, e);
+        } else {
+          cam.pos.copy(_pose.pos); cam.tgt.copy(_pose.tgt);
+        }
+      } else cam.t = 1;
+      drift = approach(drift, current ? 0 : 1, 0.6, dt);
+      driftT += anim * 0.1;
+      _drift.set(Math.sin(driftT) * 0.5, Math.sin(driftT * 0.7) * 0.25, Math.cos(driftT * 0.8) * 0.3).multiplyScalar(reduced ? 0 : drift);
+      camera.position.copy(cam.pos).add(_drift);
+      camera.up.set(Math.sin(vis.roll), Math.cos(vis.roll), 0);
+      camera.lookAt(cam.tgt);
+
+      // warp: purely how close the camera is to the hole
+      var dist = camera.position.length();
+      warp = Math.pow(Math.min(1, Math.max(0, (DFAR - dist) / (DFAR - DNEAR))), 2.4);
+      var wVis = Math.min(1, warp + 0.5 * vis.boost);
+      camera.fov = BASE_FOV + 5 * warp + vis.fov;
+      camera.updateProjectionMatrix();
+      camera.updateMatrixWorld();
+
+      var lt = anim * (1 + 1.6 * warp + 3 * vis.boost);   // ambient time runs faster the nearer you are
+
+      // planets
+      Object.keys(planets).forEach(function (id) {
+        var p = planets[id];
+        p.ang += p.omega * lt;
+        p.group.position.set(Math.cos(p.ang) * p.def.r, 0, Math.sin(p.ang) * p.def.r);
+        p.hotTarget = current === id ? 1 : p.hotTarget;
+        p.hot = approach(p.hot, p.hotTarget, 0.25, dt);
+        dressPlanet(p, 1 + 0.12 * p.hot);
+        p.body.rotation.y += lt * 0.35;
+        if (p.parts.spin) p.parts.spin.rotation.y += lt * (0.6 + 0.4 * p.hot);
+        if (p.parts.cage) p.parts.cage.rotation.y -= lt * 0.2;
+        updateTrail(p, wVis);
+      });
+
+      // singularity
+      aboutHotT = current === "about" ? 1 : aboutHotT;
+      aboutHot = approach(aboutHot, aboutHotT, 0.25, dt);
+      hole.quaternion.copy(camera.quaternion);
+      holeU.uPhase.value += lt * 1.1;
+      holeU.uBoost.value = Math.min(1, wVis * 0.9 + 0.3 * aboutHot);
+      sg.update(lt, 1 + 5 * wVis, wVis);
+
+      // star streaks toward the hole, the near sky, the iris
+      _proj.copy(hole.position).project(camera);
+      streakU.uHole.value.set(_proj.x, _proj.y);
+      streakU.uWarp.value = wVis;
+      fallStars.set(vis.streamT, vis.stream);
+      setIris(vis.iris, (_proj.x * 0.5 + 0.5) * window.innerWidth, (-_proj.y * 0.5 + 0.5) * window.innerHeight);
+
+      // readout
+      var pct = Math.round(wVis * 100);
+      if (pct !== lastPct) { lastPct = pct; pctEl.textContent = pct + "%"; fillEl.style.width = pct + "%"; }
+
+      var bo = vis.blackout;
+      if (bo !== lastBo) { lastBo = bo; blackoutEl.style.opacity = bo.toFixed(3); }
+      updateTags();
+      renderer.render(scene, camera);
+    }
+
+    return {
+      name: "orbit",
+      tick: tick,
+      flyTo: flyTo,
+      setHot: function (id, on) {
+        if (planets[id]) planets[id].hotTarget = on ? 1 : 0;
+        else if (id === "about") aboutHotT = on ? 1 : 0;
+      },
+      rest: function (on) { resting = !!on; tap = null; },   // beyond the horizon: nothing to draw behind an opaque page
+      // lifecycle, called by Loop.set() — see the gravity world's for what each side owes
+      activate: function () { resting = false; lastBo = -1; lastIris = -1; },
+      deactivate: function () {
+        resting = false; tap = null; pinch = null; touches = {};
+        lastBo = -1; blackoutEl.style.opacity = "0"; setIris(1, 0, 0);   // leave no cut-to-black behind
+      },
+      debug: function () { return { camId: cam.id, fall: faller.mode(), fallT: faller.t(), approach: approachV, resting: resting }; }
+    };
+  }
+
+  var renderer = makeRenderer();
+  try { world = renderer ? createWorld(renderer) : null; } catch (e) { world = null; }
+  try { orbitWorld = (renderer && world) ? createOrbitWorld(renderer) : null; } catch (e) { orbitWorld = null; }
   if (!world) {
     document.body.classList.add("no-gl");
     veil.classList.add("hidden");
-    $("#hint").textContent = "";
   }
+  if (!orbitWorld) {
+    // no WebGL (or the orbit world failed): the option stays listed but inert, and a stored
+    // "orbit" preference falls back to gravity for this session without being overwritten
+    var orbitOpt = $('.skin-opt[data-skin-opt="orbit"]');
+    orbitOpt.disabled = true; orbitOpt.title = "需要 WebGL";
+    if (skin === "orbit") {
+      skin = "gravity";
+      document.documentElement.setAttribute("data-skin", skin);
+      syncMenu();
+    }
+  }
+  setHint();
+  Loop.set(SKINS[skin].world());   // start the page's one frame loop on whichever world this skin needs
+
+  // read-only diagnostics for runtime verification (nothing on the page reads this)
+  window.__3nyb = { debug: function () {
+    var a = Loop.active();
+    return { skin: skin, current: current, loop: a ? a.name : null, hzToken: hzToken, revealTimer: revealTimer,
+      gravity: world ? world.debug() : null, orbit: orbitWorld ? orbitWorld.debug() : null };
+  } };
 
   // ---------------------------------------------------------------- initial route
   var startHash = location.hash.replace("#", "");
