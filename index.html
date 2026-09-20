@@ -2951,9 +2951,9 @@
     var aboutHot = 0, aboutHotT = 0;
 
     // one frame now, so the canvas is filled before the veil lifts; the loop itself is started
-    // by Loop.set() in the bootstrap, and only if 引力 is the skin on screen
+    // (and the veil lifted) by the bootstrap once the viewport has settled, and only if 引力 is
+    // the skin on screen
     tick(0);
-    veil.classList.add("hidden");
 
     return {
       name: "gravity",
@@ -3358,7 +3358,45 @@
     }
   }
   setHint();
-  Loop.set(SKINS[skin].world());   // start the page's one frame loop on whichever world this skin needs
+
+  // Start the page's one frame loop, and lift the veil, only once the viewport has settled. A
+  // phone opened in landscape can report portrait dimensions for its first frames (the browser is
+  // still rotating, or innerWidth/innerHeight lag the orientation) — and every layout decision
+  // in the worlds (isNarrow(), the camera aspect, the home pose, the arc radius) reads those live.
+  // Composing in on the stale numbers would show the portrait arrangement first and snap to the
+  // landscape one a beat later; holding the veil until the numbers agree means the first thing
+  // seen is already the final layout. Desktop and consistent loads pay only one short quiet
+  // window; nothing waits past the cap.
+  var SETTLE_QUIET = 160, SETTLE_CAP = 900;
+  function viewportSettled() {
+    if (!coarse) return true;                               // a pointer device: no orientation to disagree with
+    var landscape = window.innerWidth > window.innerHeight, o = null;
+    if (window.screen && screen.orientation && typeof screen.orientation.type === "string") o = screen.orientation.type.indexOf("landscape") === 0;
+    else if (typeof window.orientation === "number") o = Math.abs(window.orientation) === 90;
+    return o === null || o === landscape;
+  }
+  (function startWhenSettled() {
+    if (!world) { Loop.set(SKINS[skin].world()); return; }   // no 3D world: the veil is already down, nothing to settle
+    var began = performance.now(), quietAt = began, started = false;
+    function bump() { quietAt = performance.now(); }
+    function begin() {
+      if (started) return;
+      started = true;
+      window.removeEventListener("resize", bump);
+      window.removeEventListener("orientationchange", bump);
+      Loop.set(SKINS[skin].world());   // whichever world the skin on screen needs (a no-op if a skin switch already started it)
+      veil.classList.add("hidden");
+    }
+    function check() {
+      if (started) return;
+      var now = performance.now();
+      if (now - began >= SETTLE_CAP || (now - quietAt >= SETTLE_QUIET && viewportSettled())) begin();
+      else setTimeout(check, 40);
+    }
+    window.addEventListener("resize", bump);
+    window.addEventListener("orientationchange", bump);
+    check();
+  })();
 
   // read-only diagnostics for runtime verification (nothing on the page reads this)
   window.__3nyb = { debug: function () {
