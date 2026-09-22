@@ -34,6 +34,12 @@
     --glass-2: rgba(14, 23, 40, .74);
     --radius: 18px;
     --ease: cubic-bezier(.22, .61, .36, 1);
+    /* the top strip: one inset from the top edge, one gutter from the sides, one control height —
+       shared by the header (brand / back), the fixed skin menu and 简约's own bar, so whatever sits
+       in a top corner lands on the same line as whatever sits in the other */
+    --top-inset: max(1.1rem, env(safe-area-inset-top));
+    --edge: 1.5rem;
+    --pill-h: 2.25rem;
 
     /* ---- 简约 skin tokens: a separate light palette, always defined, only ever
        used inside #minimal — the gravity skin keeps reading its own tokens above
@@ -72,11 +78,13 @@
   html[data-skin="orbit"] #clocks { display: none !important; }
 
   /* ---- the skin menu: fixed top-right, above every skin (a disclosure + listbox) ---- */
-  .skin-menu { position: fixed; top: max(.8rem, env(safe-area-inset-top)); right: 1.1rem; z-index: 50; }
-  .skin-trigger {
+  .skin-menu { position: fixed; top: var(--top-inset); right: var(--edge); z-index: 50; }
+  /* one pill, two corners: the skin trigger (top-right) and the back control (top-left, while a
+     page is open) are the same component — same height, type, glass and shadow */
+  .skin-trigger, .back {
     appearance: none; cursor: pointer; font: inherit;
     display: inline-flex; align-items: center; gap: .45rem;
-    padding: .5rem .8rem .5rem .95rem; border-radius: 999px;
+    height: var(--pill-h); padding: 0 .8rem 0 .95rem; border-radius: 999px;
     font-size: .78rem; letter-spacing: .04em; color: rgba(238, 244, 252, .9);
     background: rgba(9, 15, 27, .72); border: 1px solid rgba(190, 222, 255, .18);
     backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -86,8 +94,8 @@
   .skin-trigger .k { color: rgba(238, 244, 252, .5); }
   .skin-trigger .caret { font-size: .62rem; opacity: .7; transition: transform .2s var(--ease); }
   .skin-trigger[aria-expanded="true"] .caret { transform: rotate(180deg); }
-  .skin-trigger:hover, .skin-trigger[aria-expanded="true"] { border-color: rgba(190, 222, 255, .42); background: rgba(14, 23, 40, .84); }
-  .skin-trigger:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(191, 227, 255, .6), 0 6px 24px rgba(0, 0, 0, .25); }
+  .skin-trigger:hover, .skin-trigger[aria-expanded="true"], .back:hover { border-color: rgba(190, 222, 255, .42); background: rgba(14, 23, 40, .84); }
+  .skin-trigger:focus-visible, .back:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(191, 227, 255, .6), 0 6px 24px rgba(0, 0, 0, .25); }
   .skin-list {
     position: absolute; right: 0; top: calc(100% + .45rem); min-width: 10.5rem;
     display: flex; flex-direction: column; gap: .15rem; padding: .35rem; margin: 0;
@@ -123,10 +131,11 @@
   html[data-skin="minimal"] .skin-opt:hover, html[data-skin="minimal"] .skin-opt:focus-visible { background: rgba(43, 108, 176, .1); color: var(--m-fg); }
   html[data-skin="minimal"] .skin-opt:focus-visible { box-shadow: inset 0 0 0 2px rgba(43, 108, 176, .45); }
   @media (max-width: 760px) {
-    .skin-menu { right: .7rem; }
-    .skin-trigger { padding: .48rem .7rem .48rem .85rem; }
+    :root { --edge: 1.1rem; }
+    .skin-trigger, .back { padding: 0 .7rem 0 .85rem; }
     .skin-trigger .k { display: none; }
   }
+  @media (pointer: coarse) { :root { --pill-h: 2.5rem; } }   /* a finger's target; the mouse keeps the quieter pill */
   body {
     color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC",
@@ -196,34 +205,33 @@
   html[data-skin="gravity"] .tag-about:hover, html[data-skin="gravity"] .tag-about:focus-visible { opacity: .85; }
 
   /* ---------- top bar ---------- */
+  /* the top strip: the brand and the back control share the one top-left cell — the brand is what
+     sits there on the overview, the back pill takes its place while a page is open (a cross-fade,
+     never both) — the hint is centred in the rest, and the skin menu has the top-right corner to
+     itself in every state */
   .top {
     position: fixed; top: 0; left: 0; right: 0; z-index: 7;   /* above the horizon page: the back control is never lost */
-    display: flex; align-items: center; justify-content: space-between;
-    padding: max(1.1rem, env(safe-area-inset-top)) 8.4rem 0 1.5rem;   /* right inset keeps clear of the fixed skin menu */
+    display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 1.5rem; align-items: center;
+    padding: var(--top-inset) 9rem 0 var(--edge);   /* right inset keeps the hint clear of the fixed skin menu */
     pointer-events: none;
   }
-  .brand { font-size: .78rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+  .brand {
+    grid-area: 1 / 1; font-size: .78rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    transition: opacity .3s var(--ease) .2s, visibility 0s .2s;   /* returns a beat after the back pill has gone */
+  }
   .brand b { color: var(--fg); font-weight: 600; }
   .brand span { margin-left: .8em; }
-  .hint { font-size: .74rem; letter-spacing: .1em; color: var(--muted); text-align: center; }
+  .hint { grid-column: 2; min-width: 0; font-size: .74rem; letter-spacing: .1em; color: var(--muted); text-align: center; }
   .back {
-    pointer-events: auto;
-    appearance: none; font: inherit; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .55rem;
-    color: var(--fg); font-size: .84rem; letter-spacing: .04em;
-    background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
-    padding: .55rem 1rem .55rem .85rem; white-space: nowrap; flex: none;
-    backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
-    opacity: 0; transform: translateY(-6px); visibility: hidden;
-    transition: opacity .35s var(--ease), transform .45s var(--ease), border-color .2s, visibility 0s .35s;
+    grid-area: 1 / 1; justify-self: start; pointer-events: auto;
+    padding: 0 .95rem 0 .8rem; white-space: nowrap;
+    opacity: 0; transform: translateX(-8px); visibility: hidden;
+    transition: opacity .35s var(--ease), transform .45s var(--ease), border-color .2s, background .2s, visibility 0s .35s;
   }
-  .back.on { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
-  .back:hover, .back:focus-visible { border-color: var(--line-strong); outline: none; }
-  .back kbd {
-    font: inherit; font-size: .68rem; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 6px; padding: .05rem .35rem;
-  }
+  .back.on { opacity: 1; transform: none; visibility: visible; transition-delay: .12s, .12s, 0s, 0s, 0s; }   /* arrives as the brand leaves */
+  .back kbd { font: inherit; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: rgba(238, 244, 252, .5); line-height: 1; }
   body.in-detail .hint { opacity: 0; }
+  body.in-detail .brand { opacity: 0; visibility: hidden; transition-delay: 0s, .3s; }
 
   /* ---------- overview ---------- */
   .ui { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
@@ -379,7 +387,7 @@
     .card { min-height: 0; }
   }
   @media (max-width: 760px) {
-    .top { padding-left: 1.1rem; padding-right: 5.6rem; }
+    .top { padding-right: var(--edge); }   /* no hint here: nothing left to keep clear of the skin menu */
     .brand span { display: block; margin-left: 0; margin-top: .15rem; }
     .hint { display: none; }
     .tag { font-size: .64rem; letter-spacing: .03em; padding: .25rem .4rem; }
@@ -497,6 +505,12 @@
   .hz-right { padding-left: 1rem; padding-top: .8rem; }
   .hz-glyph { width: clamp(6rem, 11vw, 9.5rem); height: clamp(6rem, 11vw, 9.5rem); color: rgba(191, 227, 255, .6); margin: 0 0 2.4rem -.4rem; filter: drop-shadow(0 0 26px rgba(191, 227, 255, .35)); transform: translate3d(0, calc(var(--hz-y, 0px) * -.05), 0); }
   .hz-glyph svg { width: 100%; height: 100%; display: block; }
+  /* --hz-line-axis: which way the project page's rule runs (y: down between the columns; x: across,
+     under the title, on the narrow single-column layout below). The debris layer reads this off
+     #horizon while the embers are still falling, so the line they gather into already lies the way
+     the slot it will settle onto does — declared here, beside the rule that lays the line out, so
+     the two can never disagree. */
+  #horizon { --hz-line-axis: y; }
   .hz-line {
     position: absolute; left: calc(50% - .5px); top: -3rem; bottom: -3rem; width: 1px; transform-origin: top;
     background: linear-gradient(180deg, transparent, rgba(191, 227, 255, .5) 10%, rgba(191, 227, 255, .55) 90%, transparent);
@@ -534,6 +548,7 @@
     .hz-split { grid-template-columns: 1fr; gap: 0; }
     .hz-left { position: static; transform: none; padding-right: 0; }
     .hz-glyph { transform: none; margin-bottom: 1.6rem; }
+    #horizon { --hz-line-axis: x; }
     .hz-line {
       position: static; width: 100%; height: 1px; margin: 1.4rem 0 2rem; transform-origin: left;
       background: linear-gradient(90deg, rgba(191, 227, 255, .75), #fff 45%, rgba(191, 227, 255, .5) 75%, transparent);
@@ -560,7 +575,8 @@
     position: sticky; top: 0; z-index: 6;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
     gap: .6rem 1rem;
-    padding: 1rem 8.4rem 1rem 1.5rem; padding-top: max(1rem, env(safe-area-inset-top));   /* right inset: the fixed skin menu */
+    padding: var(--top-inset) 9rem 1rem 1.5rem;   /* right inset: the fixed skin menu */
+    min-height: calc(var(--top-inset) + var(--pill-h) + 1rem);   /* one row as tall as the pill, so the pill sits centred in it */
     background: rgba(246, 247, 249, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--m-line);
   }
@@ -619,7 +635,7 @@
   }
 
   @media (max-width: 720px) {
-    .m-nav { padding: .9rem 5.6rem .9rem 1.1rem; }
+    .m-nav { padding: var(--top-inset) 5.6rem .9rem 1.1rem; min-height: calc(var(--top-inset) + var(--pill-h) + .9rem); }
     .m-brand span { display: block; margin-left: 0; margin-top: .15rem; }
     .m-main { padding: 1.8rem 1.1rem 4.5rem; }
     .m-card { padding: 1.4rem 1.3rem 1.6rem; border-radius: 16px; }
@@ -680,7 +696,7 @@
     #o-overview .hero p:not(.kicker) { font-size: .86rem; }
     .o-nav button { padding: .55rem .85rem; font-size: .8rem; }
     .o-warp {
-      left: .8rem; right: .8rem; bottom: auto; top: calc(max(1.1rem, env(safe-area-inset-top)) + 3rem);
+      left: .8rem; right: .8rem; bottom: auto; top: calc(var(--top-inset) + var(--pill-h) + .8rem);   /* just under the top strip's pill row, whatever its height */
       width: auto; padding: .6rem .85rem .65rem; border-radius: 12px;
     }
     .o-meter { margin: .4rem 0 .5rem; }
@@ -969,6 +985,7 @@
   var menuOpen = false;
   function syncMenu() {
     menuLabel.textContent = SKINS[skin].name;
+    menuTrigger.setAttribute("aria-label", "页面风格：" + SKINS[skin].name);   // the visible "风格" label is hidden on phones
     menuOpts.forEach(function (o) { o.setAttribute("aria-selected", o.dataset.skinOpt === skin ? "true" : "false"); });
   }
   function focusOpt(i) {
@@ -1863,13 +1880,17 @@
       return ub;
     }
     function clear() { if (cleared) return; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); cleared = true; }
-    // o: { id, t, dir, M:{x,y,r}, Hc:{x,y}, kind, rect (the page line's box or null), dock 0..1, time }
+    // o: { id, t, dir, M:{x,y,r}, Hc:{x,y}, kind, axis ("x" | "y": the way the page's line runs),
+    //      rect (the page line's box or null), dock 0..1, time }
     function draw(o) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H); cleared = false;
       var t = o.t, kind = o.kind, sd = seeds(o.id), M = o.M, Hc = o.Hc, dock = o.dock;
-      // the line: first straight down the middle through the hole, then eased onto the page's own slot
-      var ax = Hc.x, ay = -0.06 * H, bx = Hc.x, by = 1.06 * H;
+      // the line: first straight through the hole — down the middle, or across it when the page's
+      // own slot runs across (o.axis, the layout's declaration) — then eased onto that slot. Same
+      // axis from the first ember on, so settling is only ever a slide, never a turn.
+      var across = o.axis === "x";
+      var ax = across ? -0.06 * W : Hc.x, ay = across ? Hc.y : -0.06 * H, bx = across ? 1.06 * W : Hc.x, by = across ? Hc.y : 1.06 * H;
       if (o.rect && dock > 0) {
         var rc = o.rect, horiz = rc.width > rc.height;
         var rax = horiz ? rc.left : rc.left + rc.width / 2, ray = rc.top, rbx = horiz ? rc.right : rax, rby = horiz ? rc.top : rc.bottom;
@@ -2724,7 +2745,7 @@
     // lineRect: the page line's slot as last measured while the page was up. Kept through the
     // reverse so the line un-docks from the very same slot as dock runs back to 0 (the page is
     // already fading out, so the element can no longer be trusted); cleared once the fall is idle.
-    var lineRect = null;
+    var lineRect = null, lineAxis = "y";
 
     // tick(dt): one frame of this world. Scheduled by the page's single frame loop (Loop) only
     // while 引力 is the skin on screen — never by this world itself.
@@ -2935,14 +2956,22 @@
         M.x = (_proj.x * 0.5 + 0.5) * window.innerWidth; M.y = (-_proj.y * 0.5 + 0.5) * window.innerHeight;
         var md = _v.subVectors(falling.group.position, camera.position).length();
         M.r = Math.max(14, MARK_R * 0.7 / md * (window.innerHeight / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
-        if (faller.kind() === "line" && document.body.classList.contains("horizon-on")) {
-          if (!lineEl || !lineEl.isConnected) lineEl = $("#hz-project .hz-line");
-          if (lineEl) {
-            var rc = lineEl.getBoundingClientRect();
-            if (rc.width || rc.height) lineRect = { left: rc.left, top: rc.top, right: rc.right, bottom: rc.bottom, width: rc.width, height: rc.height };
+        if (faller.kind() === "line") {
+          // the way the page's line will run, from the layout's own declaration (--hz-line-axis on
+          // #horizon, set beside the .hz-line rules) — read every frame, so a rotation or resize
+          // mid-fall is followed rather than snapped to at the crossing
+          lineAxis = getComputedStyle(horizonEl).getPropertyValue("--hz-line-axis").trim() === "x" ? "x" : "y";
+          // the slot is measured while its page is on, and still through the reverse (the page
+          // fading out keeps its layout), so a rotation there is followed too — never a frozen box
+          if (document.body.classList.contains("horizon-on") || faller.dir() < 0) {
+            if (!lineEl || !lineEl.isConnected) lineEl = $("#hz-project .hz-line");
+            if (lineEl) {
+              var rc = lineEl.getBoundingClientRect();
+              if (rc.width || rc.height) lineRect = { left: rc.left, top: rc.top, right: rc.right, bottom: rc.bottom, width: rc.width, height: rc.height };
+            }
           }
         }
-        debris.draw({ id: falling.id, t: vis.t, dir: faller.dir(), M: M, Hc: Hc, kind: faller.kind(), rect: dock > 0.0005 ? lineRect : null, dock: dock, time: time });
+        debris.draw({ id: falling.id, t: vis.t, dir: faller.dir(), M: M, Hc: Hc, kind: faller.kind(), axis: lineAxis, rect: dock > 0.0005 ? lineRect : null, dock: dock, time: time });
       } else { debris.clear(); if (fm === "idle") lineRect = null; }
 
       updateTags();
@@ -2980,11 +3009,18 @@
       deactivate: function () {
         resting = false; dropAll(); debris.clear(); canvasPick = null;
         lastBo = -1; blackoutEl.style.opacity = "0"; setIris(1, 0, 0);   // leave no cut-to-black behind
+        // the selection pill and its blurb are only ever written by this world's own updateTags(),
+        // which stops running the instant Loop switches away — clear them here so orbit (which
+        // reuses these same shared #tags elements but never touches .sel/#tag-blurb itself) never
+        // inherits a stale "selected" look or a frozen leftover blurb line.
+        Object.keys(tagEls).forEach(function (id) { tagEls[id].classList.remove("sel"); });
+        if (blurbEl) { blurbEl.classList.remove("show", "soon"); blurbEl.style.opacity = ""; blurbEl.textContent = ""; }
+        blurbFor = null;
       },
       debug: function () {
         return { camAngle: camAngle, camAngleRaw: camAngleRaw, camVel: camVel, formAng: formAng, front: frontIdNow, hole: [Hc.x, Hc.y], holeRpx: holeRpx,
           fall: faller.mode(), fallT: faller.t(), fallId: faller.id(), drag: drag ? drag.p.id : null, camDrag: !!camDrag, resting: resting,
-          dock: dock, line: debris.last(), lineRect: lineRect ? [lineRect.left, lineRect.top, lineRect.width, lineRect.height] : null,
+          dock: dock, line: debris.last(), lineAxis: lineAxis, lineRect: lineRect ? [lineRect.left, lineRect.top, lineRect.width, lineRect.height] : null,
           camGoal: camGoal, idleT: idleT, showcase: showcase ? { dir: showcase.dir, wait: showcase.wait } : null,
           selected: frontIdNow && markers[frontIdNow].sel > 0.5 ? frontIdNow : null, blurb: blurbEl ? blurbEl.textContent : null,
           sel: Object.keys(markers).reduce(function (o, k) { o[k] = +markers[k].sel.toFixed(3); return o; }, {}),
